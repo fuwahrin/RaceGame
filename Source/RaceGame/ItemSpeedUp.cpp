@@ -3,6 +3,7 @@
 
 #include "ItemSpeedUp.h"
 #include "MyRaceGamePawn.h"
+#include "MyPawn.h"
 
 //コンストラクタ
 AItemSpeedUp::AItemSpeedUp()
@@ -27,4 +28,9 @@ void AItemSpeedUp::BeginPlay()
 void AItemSpeedUp::ItemHit(AMyRaceGamePawn* HitPawn)
 {
 	HitPawn->SpeedCalcFunction(2000.0f);
+}
+
+void AItemSpeedUp::ItemHit(AMyPawn* HitPawn)
+{
+	HitPawn->FindComponentByClass<UMyCartMoveComponent>()->SpeedUpEvent();
 }

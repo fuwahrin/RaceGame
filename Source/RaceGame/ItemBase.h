@@ -7,6 +7,7 @@
 #include "ItemBase.generated.h"
 
 class AMyRaceGamePawn;
+class AMyPawn;
 
 //アイテム取得時に呼ばれる動的デリゲート
 DECLARE_DYNAMIC_DELEGATE(FItemPickupDispather);
@@ -59,6 +60,9 @@ protected:
 
 	//アイテムが当たった時に発生するイベント
 	virtual void ItemHit(AMyRaceGamePawn *HitPawn);
+	virtual void ItemHit(AMyPawn* HitPawn);
+
+	
 
 protected:
 	//------------------変数

@@ -3,7 +3,10 @@
 
 #include "ItemBox.h"
 #include "MyRaceGamePawn.h"
+#include "MyPawn.h"
 #include "GameFramework/RotatingMovementComponent.h"
+#include "ItemSettingComponent.h"
+
 //コンストラクタ
 AItemBox::AItemBox()
 {
@@ -29,6 +32,25 @@ void AItemBox::ItemHit(AMyRaceGamePawn* HitPawn)
 	const int32 randMax = 3;
 	SelectItemNumber = FMath::RandRange(randMin, randMax);
 
-	HitPawn->ItemPickup(SelectItemNumber);
+	UItemSettingComponent* ItemSetting = HitPawn->FindComponentByClass<UItemSettingComponent>();
+	if (ItemSetting != nullptr)
+	{
+		ItemSetting->ItemPickup(SelectItemNumber);
+	}
+
+}
+
+void AItemBox::ItemHit(AMyPawn* HitPawn)
+{
+	//アイテムのIDを乱数から付与する
+	const int32 randMin = 1;
+	const int32 randMax = 3;
+	SelectItemNumber = FMath::RandRange(randMin, randMax);
+
+	UItemSettingComponent* ItemSetting = HitPawn->FindComponentByClass<UItemSettingComponent>();
+	if (ItemSetting != nullptr)
+	{
+		ItemSetting->ItemPickup(SelectItemNumber);
+	}
 
 }

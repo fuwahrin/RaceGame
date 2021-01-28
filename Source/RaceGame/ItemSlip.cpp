@@ -3,6 +3,7 @@
 
 #include "ItemSlip.h"
 #include "MyRaceGamePawn.h"
+#include "MyPawn.h"
 
 //コンストラクタ
 AItemSlip::AItemSlip()
@@ -33,4 +34,13 @@ void AItemSlip::ItemHit(AMyRaceGamePawn* HitPawn)
 {
 	//プレイヤーをクラッシュさせる
 	HitPawn->CrashEvent();
+
+}
+
+//アイテムにヒットしたときのメソッド
+void AItemSlip::ItemHit(AMyPawn* HitPawn)
+{
+	//プレイヤーをクラッシュさせる
+	HitPawn->FindComponentByClass<UMyCartMoveComponent>()->CrashEvent();
+
 }

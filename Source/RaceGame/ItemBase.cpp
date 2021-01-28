@@ -6,6 +6,7 @@
 #include "GameFramework/RotatingMovementComponent.h"
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "MyRaceGamePawn.h"
+#include "MyPawn.h"
 
 // Sets default values
 AItemBase::AItemBase()
@@ -53,22 +54,36 @@ void AItemBase::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* O
 {
 	//ヒットしたアクターがプレイヤーならキャストを行う
 	AMyRaceGamePawn* const MyRaceGamePawn = Cast<AMyRaceGamePawn>(OtherActor);
+	AMyPawn* const MyPawn = Cast<AMyPawn>(OtherActor);
 
 	//上記の変数設定がうまく行っていれば処理
 	if (MyRaceGamePawn)
 	{
-		//アイテムを非表示
-		ItemVisibility(false);
-
 		//アイテムに当たったイベント
 		ItemHit(MyRaceGamePawn);
+
+		//アイテムを非表示
+		ItemVisibility(false);
 
 		//一定時間たったらアイテムを再表示
 		const float DelayTime = 3.0f;
 		GetWorldTimerManager().SetTimer(RespawnHandler, this, &AItemBase::ItemRespawn, DelayTime, false);
-
 	}
+	else if (MyPawn)
+	{
+		//アイテムに当たった時のイベント
+		ItemHit(MyPawn);
+
+		//アイテムを非表示
+		ItemVisibility(false);
+
+		//一定時間たったらアイテムを再表示
+		const float DelayTime = 3.0f;
+		GetWorldTimerManager().SetTimer(RespawnHandler, this, &AItemBase::ItemRespawn, DelayTime, false);
 }
+	}
+
+	
 
 void AItemBase::ItemVisibility(bool bIsVisible)
 {
@@ -110,7 +125,11 @@ void AItemBase::ItemRespawn()
 
 void AItemBase::ItemHit(AMyRaceGamePawn *HitPawn)
 {
+	UE_LOG(LogTemp, Error, TEXT("ItemHitBase<MyRaceGamePawn>"));
+}
 
-	UE_LOG(LogTemp, Error, TEXT("ItemHitBase"));
+void AItemBase::ItemHit(AMyPawn* HitPawn)
+{
+	UE_LOG(LogTemp, Error, TEXT("ItemHitBase<AMyPawn>"));
 }
 

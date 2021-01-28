@@ -6,9 +6,8 @@
 #include "GameFramework/Pawn.h"
 #include "MyCartMoveComponent.h"
 #include "MyCartMoveComponentReplicator.h"
+#include "ItemSettingComponent.h"
 #include "MyPawn.generated.h"
-
-
 
 UCLASS()
 class RACEGAME_API AMyPawn : public APawn
@@ -27,10 +26,10 @@ public:
 	//同期移動コンポーネント
 	UPROPERTY(VisibleAnywhere , BlueprintReadOnly)
 	UMyCartMoveComponentReplicator* MovementComponentReplicator;
-private:
-///////変数
-	
 
+	//アイテム設定のコンポーネント
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UItemSettingComponent* ItemSettingComponent;
 
 protected:
 	// Called when the game starts or when spawned
@@ -40,12 +39,18 @@ protected:
 
 	void MoveRight(float value);
 
-
 	//権限
 	ENetRole Role;
 
 	//権限の確認メソッド
 	FString GetEnumText(ENetRole Role);
+
+	UFUNCTION()
+	void ItemUseMultiCast();
+
+	UFUNCTION()
+	void ItemUseRunonServer();
+
 
 public:
 

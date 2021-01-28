@@ -23,5 +23,5 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void ItemHit(AMyRaceGamePawn* HitPawn) override;
-	
+	virtual void ItemHit(AMyPawn* HitPawn) override;
 };

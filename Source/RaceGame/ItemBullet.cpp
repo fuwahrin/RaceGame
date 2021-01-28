@@ -4,6 +4,7 @@
 #include "ItemBullet.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "MyRaceGamePawn.h"
+#include "MyPawn.h"
 #include "Components/SphereComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 
@@ -66,4 +67,12 @@ void AItemBullet::ItemHit(AMyRaceGamePawn *HitPawn)
 {
 	//プレイヤーをクラッシュさせる
 	HitPawn->CrashEvent();
+}
+
+//アイテムが当たった時のイベント
+void AItemBullet::ItemHit(AMyPawn* HitPawn)
+{
+	//プレイヤーをクラッシュさせる
+	//HitPawn->CrashEvent();
+	HitPawn->FindComponentByClass<UMyCartMoveComponent>()->CrashEvent();
 }

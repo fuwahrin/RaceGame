@@ -4,6 +4,7 @@
 #include "MyPawn.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "ItemSettingComponent.h"
 
 // Sets default values
 AMyPawn::AMyPawn()
@@ -20,12 +21,18 @@ AMyPawn::AMyPawn()
 	//移動同期コンポーネント設定
 	MovementComponentReplicator = CreateDefaultSubobject<UMyCartMoveComponentReplicator>(TEXT("MovementComponentReplicator"));
 
+	//アイテム設定のコンポーネント
+	ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
+
+
+
 }
 // Called when the game starts or when spawned
 void AMyPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//権限の取得
 	Role = GetLocalRole();
 
 	if (HasAuthority())
@@ -40,7 +47,6 @@ void AMyPawn::BeginPlay()
 void AMyPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 	//プレイヤーの権限をデバッグ表示
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
 
@@ -58,6 +64,21 @@ void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	//キーアクション登録
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMyPawn::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMyPawn::MoveRight);
+
+	//アイテム出現ボタン
+	//ネットワークの権限を確認
+	if (this->HasAuthority())
+	{
+		//サーバー側ならマルチキャスト
+		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseMultiCast);
+
+	}
+	else
+	{
+		//クライアント側ならサーバで実行させる。
+		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseRunonServer);
+	}
+
 }
 
 
@@ -74,7 +95,6 @@ void AMyPawn::MoveRight(float value)
 	if (MovementComponent == nullptr) return;
 
 	MovementComponent->SetSteeringThrow(value);
-
 }
 
 FString AMyPawn::GetEnumText(ENetRole role)
@@ -93,6 +113,24 @@ FString AMyPawn::GetEnumText(ENetRole role)
 		return "ROLE_MAX";
 	default:
 		return "ERROR";
+	}
+}
+
+void AMyPawn::ItemUseMultiCast()
+{
+	UE_LOG(LogTemp, Error, TEXT("ItemUseMultiCast(1)"));
+	if (ItemSettingComponent != nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ItemUseMultiCast(2)"));
+		ItemSettingComponent->SpawnItemMulticast();
+	}
+}
+
+void AMyPawn::ItemUseRunonServer()
+{
+	if (ItemSettingComponent != nullptr)
+	{
+		ItemSettingComponent->SpawnItemRunonServer();
 	}
 }
 

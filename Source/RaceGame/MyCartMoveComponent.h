@@ -86,17 +86,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector Velocity;
 
-	//速度調整
+	
 	UFUNCTION(BlueprintCallable, Category = "Speed")
-	void SpeedCalc(float Rate, float DrivingForce);
+	void SpeedUpEvent();
 
-	//速度アップ
 	UFUNCTION(BlueprintCallable, Category = "Speed")
-	void SpeedUp();
+	void CrashEvent();
+
+private:
+	//速度調整
+	UFUNCTION()
+		void SpeedCalc(float Rate, float DrivingForce);
 
 	//速度ダウン
-	UFUNCTION(BlueprintCallable, Category = "Speed")
-	void SpeedDown();
+	UFUNCTION()
+		void SpeedCalcTimeEvent(float Rate, float MaxDriving, float CallTime);
 
 
 public:

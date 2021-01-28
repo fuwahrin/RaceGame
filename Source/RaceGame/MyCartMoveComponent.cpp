@@ -164,25 +164,32 @@ void UMyCartMoveComponent::SpeedCalc(float Rate, float DrivingForce)
 	
 }
 
-void UMyCartMoveComponent::SpeedUp()
+//速度調整のタイムイベント関数
+void UMyCartMoveComponent::SpeedCalcTimeEvent(float Rate , float MaxDriving , float CallTime)
 {
+	//イベント用のハンドラーとデリゲート変数を宣言
+	FTimerHandle SpeedHandler;
+	FTimerDelegate SpeedDelegate;
 
-	FTimerHandle SpeedUpHandler;
-	FTimerHandle SpeedDownHandler;
-	float SpeedTimerSpan = 0.5f;
-	FTimerDelegate SpeedUpDelegate;
-	FTimerDelegate SpeedDownDelegate;
-
-
-	SpeedUpDelegate.BindUFunction(this, FName(TEXT("SpeedCalc")), 3.0f, 30000.0f);
-	SpeedDownDelegate.BindUFunction(this, FName(TEXT("SpeedCalc")), 1.0f, 10000.0f);
-	GetWorld()->GetTimerManager().SetTimer(SpeedUpHandler, SpeedUpDelegate, 0.1f, false);
-	GetWorld()->GetTimerManager().SetTimer(SpeedDownHandler, SpeedDownDelegate, SpeedTimerSpan*2, false);
+	//速度調整の関数を登録
+	SpeedDelegate.BindUFunction(this, FName(TEXT("SpeedCalc")), Rate, MaxDriving);
+	
+	//イベント登録した関数を呼ぶ
+	GetWorld()->GetTimerManager().SetTimer(SpeedHandler, SpeedDelegate, CallTime, false);
 }
 
-void UMyCartMoveComponent::SpeedDown()
+void UMyCartMoveComponent::SpeedUpEvent()
 {
+	SpeedCalcTimeEvent(3.0f, 30000.0f, 0.1f);
+	SpeedCalcTimeEvent(1.0f, 10000.0f, 1.1f);
+}
 
+void UMyCartMoveComponent::CrashEvent()
+{
+	//速度をリセットする。
+	Velocity = FVector::ZeroVector;
+	SpeedCalcTimeEvent(0.0f, 0.0f, 0.1f);
+	SpeedCalcTimeEvent(1.0f, 10000.0f, 1.1f);
 }
 
 

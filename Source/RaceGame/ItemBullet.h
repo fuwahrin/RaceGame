@@ -23,6 +23,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void ItemHit(AMyRaceGamePawn *HitPawn) override;
+	virtual void ItemHit(AMyPawn* HitPawn) override;
 
 
 protected:

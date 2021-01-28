@@ -10,7 +10,7 @@
 #include "Components/SphereComponent.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "RaceGameInstance.h"
-#include "ItemRefActor.h"
+#include "ItemSettingComponent.h"
 
 
 // コンストラクタ
@@ -19,14 +19,14 @@ AMyRaceGamePawn::AMyRaceGamePawn()
 	USkeletalMeshComponent* OwnerMesh = GetMesh();
 	OwnerMesh->SetCollisionProfileName(TEXT("MyRacePawn"));
 
-	//アイテムの出現位置を設定しているコンポーネントの設定
-	ItemSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ItemSpawnPoint"));
-	ItemSpawnPoint->SetupAttachment(OwnerMesh);
-
+	
 
 	//オフロード確認用のタイヤコリジョンコンポーネントの設定
 	WheelColliderGroup = CreateDefaultSubobject<USceneComponent>(TEXT("WheelColiderGroup"));
 	WheelColliderGroup->SetupAttachment(OwnerMesh);
+
+	//アイテム管理のコンポーネント設定
+	ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
 
 	float radius = 15.0f;
 	ForwardCollision = CreateDefaultSubobject<USphereComponent>(TEXT("ForwardColision"));
@@ -45,19 +45,13 @@ AMyRaceGamePawn::AMyRaceGamePawn()
 
 
 	//変数の初期値設定
-	bIsItemUse = false;
 	GamePlayerNum = 2;
 	bisTimerStart = false;
 	bIsCheckPoint = false;
 	GameTimer = 0.0f;
 	GoalLap = 3;
 
-	//データテーブルの初期化
-	static ConstructorHelpers::FObjectFinder<UDataTable>TableDataAsset(TEXT("DataTable'/Game/Developers/fuwarrin/Collections/BP/ImportData/RaceGameItemListCPP.RaceGameItemListCPP'"));
-	if (TableDataAsset.Succeeded())
-	{
-		ItemDataTable = TableDataAsset.Object;
-	}
+	
 }
 
 // BeginPlay
@@ -101,7 +95,6 @@ void AMyRaceGamePawn::BeginPlay()
 	//参加人数のカウント(GameInstanceで管理している)
 	RaceGameInstance = URaceGameInstance::GetInstance();
 
-
 	if (RaceGameInstance)
 	{
 		RaceGameInstance->PlayerCounter++;
@@ -143,12 +136,13 @@ void AMyRaceGamePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	if (this->HasAuthority())
 	{
 		//サーバー側ならマルチキャスト
-		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyRaceGamePawn::SpawnItemMulticast);
+		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyRaceGamePawn::ItemUseMultiCast);
+		
 	}
 	else
 	{
 		//クライアント側ならサーバで実行させる。
-		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyRaceGamePawn::SpawnItemRunonServer);
+		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyRaceGamePawn::ItemUseRunonServer);
 	}
 
 	//リスポーン
@@ -162,172 +156,14 @@ void AMyRaceGamePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 }
 
 
-// アイテムを出現させるメソッド
-void AMyRaceGamePawn::SpawnItem()
-{
-	//アイテムが使用できる状態か確認
-	if (bIsItemUse)
-	{
-		//アイテムをSpawnさせる
-		UWorld* const World = GetWorld();
-		if (World)
-		{
-			//スポーンさせる為のパラメータ
-			FActorSpawnParameters SpawnParams;
-			
-			//オーナー
-			SpawnParams.Owner = this;
-
-			//スポーン位置の設定(ItemSpawnPointのワールド座標を格納)
-			FVector SpawnLocation = ItemSpawnPoint->GetComponentLocation();
-			FRotator SpawnRotation = ItemSpawnPoint->GetComponentRotation();
-			//スポーンする際のScale
-			FVector SpawnScale = FVector(ItemScale);
-			
-			
-
-			//アイテムをスポーンする。
-			AActor* const SpawnItem = World->SpawnActor<AActor>(ItemClass , SpawnLocation, SpawnRotation ,  SpawnParams);
-			SpawnItem->SetActorScale3D(SpawnScale);
-
-			ItemUse();
-
-		}
-	}
-}
-
-void AMyRaceGamePawn::SpawnItemMulticast_Implementation()
-{
-	SpawnItem();
-}
-
-
-void AMyRaceGamePawn::SpawnItemRunonServer_Implementation()
-{
-	SpawnItem();
-}
-
-//RPC呼び出し検証用のメソッド
-//※falseを返すとRPCが実行されない
-bool AMyRaceGamePawn::SpawnItemRunonServer_Validate()
-{
-	return true;
-}
-
-// アイテムを使用するメソッド
-void AMyRaceGamePawn::ItemUse()
-{
-	//アイテムを使用したことを設定
-
-	//UIの画像を消す。
-	DrawIcon = nullptr;
-
-	//アイテム使用可能変数をFalse
-	bIsItemUse = false;
-
-	//アイテムIDを初期化
-	ItemNumber = 0;
-}
-
-//アイテムの設定を行うメソッド
-void AMyRaceGamePawn::ItemSetting(int32 ItemNum)
-{
-	//アイテムのIDを設定
-	ItemNumber = ItemNum;
-
-	
-	//出現する際の設定
-	SpawnSetting();
-
-	//アイテムを使用できる状態に変更
-	bIsItemUse = true;
-}
-
-void AMyRaceGamePawn::ItemSettingRunOnServer_Implementation(int32 ItemNum)
-{
-	ItemSetting(ItemNum);
-}
-
-
-//	アイテムを出現させるメソッド
-void AMyRaceGamePawn::SpawnSetting()
-{
-	//ネットワークの権限によって処理を変える
-	if (this->HasAuthority())
-	{
-		//サーバ側
-
-		//ItemClassをIDによって設定する。
-		//-----TOOD:外部ファイルから設定か初期でアセットを読み込むように変更する。
-		switch (ItemNumber)
-		{
-		case 1:
-			ItemClass = BulletItem;
-			break;
-		case 2:
-			ItemClass = SlipItem;
-			break;
-		case 3:
-			ItemClass = SpeedUpItem;
-			break;
-		}
-
-		FName RowName = FName(FString::FromInt(ItemNumber));
-		FItemStructCpp* ItemStruct = ItemDataTable->FindRow<FItemStructCpp>(RowName, FString("Error"));
-
-		//データテーブルから構造体に代入出来ていれば各アイテムの処理を行う。
-		if (ItemStruct)
-		{
-			//アイテムの出現位置を設定
-			FVector ItemSpawnLocation = FVector(ItemStruct->SpawnPosX, 0.0f, 0.0f);
-			ItemSpawnPoint->SetRelativeLocation(ItemSpawnLocation);
-		
-			//アイテムの大きさを設定
-			ItemScale = ItemStruct->SpawnScale;
-		
-			//アイコン設定
-			DrawIcon = ItemStruct->Icon;
-		}
-
-	}
-	else
-	{
-		//クライアント側
-		SpawnSettingRunOnServer();
-	}
-		
-}
 
 //	スピードを調整するイベント
 void AMyRaceGamePawn::SpeedCalcFunction(float SpeedMultipication)
 {
 	//正面のベクトルに引数で指定した値を乗算する
-	//FVector NewVelocity = Mesh->GetForwardVector() * SpeedMultipication;
-	//Mesh->SetPhysicsLinearVelocity(NewVelocity);
-
 	FVector NewVelocity = GetMesh()->GetForwardVector() * SpeedMultipication;
 	GetMesh()->SetPhysicsLinearVelocity(NewVelocity);
 
-}
-
-//	アイテム取得メソッド
-void AMyRaceGamePawn::ItemPickup(int ItemNum)
-{
-	//サーバ側かクライアント側で処理を分ける
-	if (HasAuthority())
-	{
-		//サーバー側の処理
-		
-		//アイテムの設定を行う。
-		ItemSetting(ItemNum);
-	}
-	else
-	{
-		//クライアント側の処理
-
-		//アイテム設定をサーバで実行する。
-		ItemSettingRunOnServer(ItemNum);
-	}
 }
 
 //	ゴール判定を行うメソッド
@@ -382,7 +218,6 @@ void AMyRaceGamePawn::CheckPointRun()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("CurrentCheckPoint = %d"), CurrentCheckPoint);
-	
 }
 
 //	プレイヤーリスポーン（救済措置）
@@ -477,6 +312,22 @@ void AMyRaceGamePawn::GameTimeCounter()
 	}
 }
 
+void AMyRaceGamePawn::ItemUseMultiCast()
+{
+	if (ItemSettingComponent != nullptr)
+	{
+		ItemSettingComponent->SpawnItemMulticast();
+	}
+}
+
+void AMyRaceGamePawn::ItemUseRunonServer()
+{
+	if (ItemSettingComponent != nullptr)
+	{
+		ItemSettingComponent->SpawnItemRunonServer();
+	}
+}
+
 
 void AMyRaceGamePawn::CrashEvent()
 {
@@ -490,7 +341,9 @@ void AMyRaceGamePawn::CrashEvent()
 	InputCalc = 0.0f;
 
 	//アイテムを使用できないようにする、
-	bIsItemUse = false;
+	//bIsItemUse = false;
+	ItemSettingComponent->SetItemUse(true);
+
 
 	//一定時間完了後入力値に掛けている値をもとに戻す
 	float DelayTime = 1.0f;
@@ -502,13 +355,10 @@ void AMyRaceGamePawn::CrashEvent()
 void AMyRaceGamePawn::InputReset()
 {
 	InputCalc = 1.0f;
-	bIsItemUse = true;
+	//bIsItemUse = true;
+	ItemSettingComponent->SetItemUse(true);
 }
 
-void AMyRaceGamePawn::SpawnSettingRunOnServer_Implementation()
-{
-	SpawnSetting();
-}
 
 void AMyRaceGamePawn::AccelSetting(UPrimitiveComponent* HitComponent, bool bIsSpeedDown)
 {
@@ -543,16 +393,7 @@ void AMyRaceGamePawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AMyRaceGamePawn, ItemNumber);
-	DOREPLIFETIME(AMyRaceGamePawn, ItemClass);
-	DOREPLIFETIME(AMyRaceGamePawn, DrawIcon);
-	DOREPLIFETIME(AMyRaceGamePawn, ItemScale);
-	DOREPLIFETIME(AMyRaceGamePawn, bIsItemUse);
-	DOREPLIFETIME(AMyRaceGamePawn, BulletItem);
-	DOREPLIFETIME(AMyRaceGamePawn, SlipItem);
-	DOREPLIFETIME(AMyRaceGamePawn, SpeedUpItem);
 	DOREPLIFETIME(AMyRaceGamePawn, GameTimer);
-
 
 }
 

@@ -27,10 +27,6 @@ class RACEGAME_API AMyRaceGamePawn : public ARaceGamePawn
 protected:
 	//==========================コンポーネント
 
-	//アイテムの出現位置
-	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		class USceneComponent* ItemSpawnPoint;
-
 	//オフロードチェック用のコライダー
 	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USceneComponent* WheelColliderGroup;
@@ -41,6 +37,10 @@ protected:
 
 	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USphereComponent* BackwardCollision;
+
+	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class UItemSettingComponent* ItemSettingComponent;
+
 
 
 protected:
@@ -53,41 +53,8 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
 		class UUserWidget *GameUi;
 
-	//アイテムのID
-	UPROPERTY(Replicated , VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-		int32 ItemNumber;
-
-	//Spanwさせるアイテム
-	UPROPERTY(Replicated , VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<class AActor> ItemClass;
-
-
-	//アイテムの画像
-	UPROPERTY(Replicated , VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-		class UTexture2D *DrawIcon;
-
-	//スポーンさせる際のScale
-	UPROPERTY(Replicated , VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-		float ItemScale;
-
-	//アイテムが使用できる状態か確認する変数
-	UPROPERTY(Replicated , EditDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-		bool bIsItemUse;
-
-	//アイテムの種類
-	UPROPERTY(Replicated,EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<AActor> BulletItem;
-
-	UPROPERTY(Replicated,EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<AActor> SlipItem;
-
-	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<AActor> SpeedUpItem;
-
-	//データテーブル
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DataTable")
-		class UDataTable* ItemDataTable;
-
+	
+	
 	//ブレーキ解除のタイムハンドラー
 	FTimerHandle BrakeTimeHandler;
 
@@ -171,30 +138,6 @@ protected:
 	//　同期するプロパティ
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	//アイテムを出現させるメソッド
-	UFUNCTION(NetMulticast , unreliable )
-		void SpawnItemMulticast();
-	UFUNCTION(Server , unreliable , WithValidation)
-		void SpawnItemRunonServer();
-	UFUNCTION()
-		void SpawnItem();
-
-	//アイテムを使用したときのメソッド
-	UFUNCTION()
-		void ItemUse();
-
-	//アイテムをスポーンさせる際の設定
-	UFUNCTION()
-		void ItemSetting(int32 ItemNum);
-	UFUNCTION(Server , unreliable)
-		void ItemSettingRunOnServer(int32 ItemNum);
-
-	UFUNCTION()
-		void SpawnSetting();
-	UFUNCTION(Server, unreliable)
-		void SpawnSettingRunOnServer();
-
-
 	//inputcalc変数のセッター
 	UFUNCTION()
 		void InputReset();
@@ -211,9 +154,6 @@ public:
 	UFUNCTION()
 		void AccelSetting(UPrimitiveComponent* HitComponent , bool bIsSpeedDown);
 
-	//アイテムを取得するときに呼ばれるメソッド
-	UFUNCTION()
-		void ItemPickup(int ItemNum);
 
 	//ゴール判定の処理
 	UFUNCTION(BlueprintCallable)
@@ -241,6 +181,13 @@ public:
 	//ゲーム時間カウント
 	UFUNCTION()
 		void GameTimeCounter();
+
+	UFUNCTION()
+		void ItemUseMultiCast();
+
+	UFUNCTION()
+		void ItemUseRunonServer();
+
 
 
 

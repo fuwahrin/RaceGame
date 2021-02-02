@@ -5,6 +5,11 @@
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 #include "ItemSettingComponent.h"
+#include "MyCartMoveComponent.h"
+#include "MyCartMoveComponentReplicator.h"
+#include "Components/BoxComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
 
 // Sets default values
 AMyPawn::AMyPawn()
@@ -15,15 +20,42 @@ AMyPawn::AMyPawn()
 	bReplicates = true;
 	SetReplicatingMovement(false);
 
+
+	//コンポーネントの設定
+	
+	//コライダー
+	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollision"));
+	BoxCollision->SetupAttachment(RootComponent);
+
+	//メッシュのオフセット
+	MeshOffSetRoot = CreateDefaultSubobject<USceneComponent>(TEXT("MeshOffset"));
+	MeshOffSetRoot->SetupAttachment(BoxCollision);
+
+	//メッシュ
+	CarMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeltalMesh"));
+	CarMesh->SetupAttachment(MeshOffSetRoot);
+
+	//SplingArm
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+	SpringArm->SetupAttachment(MeshOffSetRoot);
+
+	//カメラ
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(SpringArm);
+
+	
+	//アイテム設定のコンポーネント
+	ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
+	ItemSettingComponent->ItemSpawnPoint->SetupAttachment(MeshOffSetRoot);
+	
+
 	//移動コンポーネントの設定
 	MovementComponent = CreateDefaultSubobject<UMyCartMoveComponent>(TEXT("MovementComponent"));
 
 	//移動同期コンポーネント設定
 	MovementComponentReplicator = CreateDefaultSubobject<UMyCartMoveComponentReplicator>(TEXT("MovementComponentReplicator"));
 
-	//アイテム設定のコンポーネント
-	ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
-
+	
 
 
 }
@@ -37,7 +69,7 @@ void AMyPawn::BeginPlay()
 
 	if (HasAuthority())
 	{
-		NetUpdateFrequency = 1;
+		NetUpdateFrequency = 1.0f;
 	}
 	
 }
@@ -86,7 +118,6 @@ void AMyPawn::MoveForward(float value)
 {
 	if (MovementComponent == nullptr) return;
 
-	//UE_LOG(LogTemp, Warning, TEXT("Spped = %f"), value);
 	MovementComponent->SetThrottle(value);
 }
 
@@ -118,10 +149,10 @@ FString AMyPawn::GetEnumText(ENetRole role)
 
 void AMyPawn::ItemUseMultiCast()
 {
-	UE_LOG(LogTemp, Error, TEXT("ItemUseMultiCast(1)"));
+	//UE_LOG(LogTemp, Log, TEXT("ItemUseMultiCast(1)"));
 	if (ItemSettingComponent != nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ItemUseMultiCast(2)"));
+		//UE_LOG(LogTemp, Log, TEXT("ItemUseMultiCast(2)"));
 		ItemSettingComponent->SpawnItemMulticast();
 	}
 }

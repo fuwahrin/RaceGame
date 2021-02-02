@@ -4,9 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "MyCartMoveComponent.h"
-#include "MyCartMoveComponentReplicator.h"
-#include "ItemSettingComponent.h"
 #include "MyPawn.generated.h"
 
 UCLASS()
@@ -21,15 +18,37 @@ public:
 	///コンポーネント	
 	//移動コンポーネント
 	UPROPERTY(VisibleAnywhere , BlueprintReadOnly)
-	UMyCartMoveComponent* MovementComponent;
+	class UMyCartMoveComponent* MovementComponent;
 
 	//同期移動コンポーネント
 	UPROPERTY(VisibleAnywhere , BlueprintReadOnly)
-	UMyCartMoveComponentReplicator* MovementComponentReplicator;
+	class UMyCartMoveComponentReplicator* MovementComponentReplicator;
 
 	//アイテム設定のコンポーネント
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UItemSettingComponent* ItemSettingComponent;
+	class UItemSettingComponent* ItemSettingComponent;
+	
+
+	//コライダー
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UBoxComponent* BoxCollision;
+
+	//メッシュのオフセット
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class USceneComponent* MeshOffSetRoot;
+
+	//メッシュ
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class USkeletalMeshComponent* CarMesh;
+
+	/** Spring arm that will offset the camera */
+	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class USpringArmComponent* SpringArm;
+
+	/** Camera component that will be our viewpoint */
+	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* Camera;
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -50,14 +69,6 @@ protected:
 
 	UFUNCTION()
 	void ItemUseRunonServer();
-
-
-public:
-
-	UPROPERTY(EditAnyWhere , BlueprintReadWrite)
-	float SpeedRate = 1.0f;
-
-	
 
 public:	
 	// Called every frame

@@ -4,11 +4,13 @@
 #include "ItemSpeedUp.h"
 #include "MyRaceGamePawn.h"
 #include "MyPawn.h"
+#include "MyCartMoveComponent.h"
+
 
 //コンストラクタ
 AItemSpeedUp::AItemSpeedUp()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	//リスポーンさせなうように設定
 	bIsItemRespawn = false;
@@ -18,6 +20,10 @@ AItemSpeedUp::AItemSpeedUp()
 	UStaticMesh* SpeedUpMesh = SpeedUpItemMeshAsset.Object;
 	ItemMesh->SetStaticMesh(SpeedUpMesh);
 	ItemMesh->SetRelativeLocation(FVector(0.0f, 0.0, 0.0f));
+
+	//同期設定
+	SetReplicates(true);
+
 
 }
 void AItemSpeedUp::BeginPlay()
@@ -32,5 +38,7 @@ void AItemSpeedUp::ItemHit(AMyRaceGamePawn* HitPawn)
 
 void AItemSpeedUp::ItemHit(AMyPawn* HitPawn)
 {
+	
+	UE_LOG(LogTemp, Warning, TEXT("SpeedUp"));
 	HitPawn->FindComponentByClass<UMyCartMoveComponent>()->SpeedUpEvent();
 }

@@ -23,6 +23,11 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+public:
+
+	//コンポーネント
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class USceneComponent* ItemSpawnPoint;
 
 private:
 	//----変数
@@ -83,33 +88,32 @@ protected:
 	UFUNCTION()
 		void ItemSetting(int32 ItemNum);
 
-	UFUNCTION(Server, unreliable)
+	UFUNCTION(Server, reliable)
 		void ItemSettingRunOnServer(int32 ItemNum);
 
 	UFUNCTION()
 		void SpawnSetting();
-	UFUNCTION(Server, unreliable)
+	UFUNCTION(Server, reliable)
 		void SpawnSettingRunOnServer();
 
 public:
 
 	//アイテムを出現させるメソッド
-	UFUNCTION(NetMulticast, unreliable)
+	UFUNCTION(NetMulticast, reliable)
 	void SpawnItemMulticast();
 
-	UFUNCTION(Server, unreliable, WithValidation)
+	UFUNCTION(Server, reliable, WithValidation)
 	void SpawnItemRunonServer();
 
 	//アイテムを取得するときに呼ばれるメソッド
 	UFUNCTION()
 		void ItemPickup(int ItemNum);
 	
-
 	//セッターゲッター
 	UFUNCTION()
 		void SetItemUse(bool value) { bIsItemUse = value; }
 
-	UFUNCTION()
-		FVector GetSpawnPoint() { return SpawnPoint; }
+	
+
 	
 };

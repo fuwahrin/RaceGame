@@ -26,7 +26,8 @@ AMyRaceGamePawn::AMyRaceGamePawn()
 	WheelColliderGroup->SetupAttachment(OwnerMesh);
 
 	//アイテム管理のコンポーネント設定
-	ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
+	//ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
+	//ItemSettingComponent->ItemSpawnPoint->SetupAttachment(GetMesh());
 
 	float radius = 15.0f;
 	ForwardCollision = CreateDefaultSubobject<USphereComponent>(TEXT("ForwardColision"));

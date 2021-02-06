@@ -4,6 +4,7 @@
 #include "ItemSlip.h"
 #include "MyRaceGamePawn.h"
 #include "MyPawn.h"
+#include "MyCartMoveComponent.h"
 
 //コンストラクタ
 AItemSlip::AItemSlip()

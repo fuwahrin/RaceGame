@@ -18,11 +18,11 @@ public:
 	///コンポーネント	
 	//移動コンポーネント
 	UPROPERTY(VisibleAnywhere , BlueprintReadOnly)
-	class UMyCartMoveComponent* MovementComponent;
+	class UMyCartMoveComponent* Movement;
 
 	//同期移動コンポーネント
 	UPROPERTY(VisibleAnywhere , BlueprintReadOnly)
-	class UMyCartMoveComponentReplicator* MovementComponentReplicator;
+	class UMyCartMoveComponentReplicator* MovementReplicator;
 
 	//アイテム設定のコンポーネント
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

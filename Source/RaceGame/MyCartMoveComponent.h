@@ -55,12 +55,14 @@ private:
 
 	//ステアリング
 	float SteeringThrow;
-
-
+	
+	
 	//スロットルが最大の時に車に加えられる力(N)
 	UPROPERTY(EditAnywhere)
-	float MaxDrivingForce = 10000;
+	float MaxDrivingForce = 5000;
 
+	//スロットルが最大の時に車に加えられる力(N)の初期値
+	float InitMaxDrivingForce;
 	//フルスロットルで1秒あたりに回転する最小回転半径(m)
 	UPROPERTY(EditAnywhere)
 	float MinTurnningRadius = 10.0f;
@@ -79,8 +81,14 @@ private:
 	
 	
 public:
+	//アイテムの加速地
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SpeedUpRate =1.0f;
+
+	//道路の速度調整用の値
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float RoadSpeedRate = 1.0f;
+
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -96,11 +104,11 @@ public:
 private:
 	//速度調整
 	UFUNCTION()
-		void SpeedCalc(float Rate, float DrivingForce);
+		void SpeedCalc(float Rate);
 
 	//速度ダウン
 	UFUNCTION()
-		void SpeedCalcTimeEvent(float Rate, float MaxDriving, float CallTime);
+		void SpeedCalcTimeEvent(float Rate , float CallTime);
 
 
 public:

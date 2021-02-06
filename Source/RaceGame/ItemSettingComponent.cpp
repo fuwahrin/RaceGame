@@ -9,13 +9,16 @@
 // Sets default values for this component's properties
 UItemSettingComponent::UItemSettingComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	//Tickを無効
+	PrimaryComponentTick.bCanEverTick = false;
 
 
 	//変数の初期化
 	bIsItemUse = false;
+
+	//このコンポーネントの同期を有効にする
+	SetIsReplicatedByDefault(true);
+
 
 	//データテーブルの初期化
 	static ConstructorHelpers::FObjectFinder<UDataTable>TableDataAsset(TEXT("DataTable'/Game/Developers/fuwarrin/Collections/BP/ImportData/RaceGameItemListCPP.RaceGameItemListCPP'"));
@@ -24,6 +27,7 @@ UItemSettingComponent::UItemSettingComponent()
 		ItemDataTable = TableDataAsset.Object;
 	}
 
+	ItemSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ItemSpawnPoint"));
 	
 }
 
@@ -38,9 +42,7 @@ void UItemSettingComponent::BeginPlay()
 	//所有者のPawnを取得
 	OwnerPawn = GetOwner()->GetInstigator<APawn>();
 
-	//このコンポーネントの同期を有効にする
-	SetIsReplicatedByDefault(true);
-
+	
 	
 }
 
@@ -85,21 +87,18 @@ void UItemSettingComponent::SpawnItem()
 				SpawnParams.Owner = this->GetOwner();
 
 				//スポーン位置の設定(ItemSpawnPointのワールド座標を格納)
-				//FVector SpawnLocation = ItemSpawnPoint->GetComponentLocation();
-				//FRotator SpawnRotation = ItemSpawnPoint->GetComponentRotation();
-				FVector SpawnLocation = OwnerPawn->GetActorLocation() + SpawnPoint;
-				FRotator SpawnRotation = OwnerPawn->GetActorRotation();
-
+				FVector SpawnLocation = ItemSpawnPoint->GetComponentLocation();
+				FRotator SpawnRotation = ItemSpawnPoint->GetComponentRotation();
+				
 				//スポーンする際のScale
 				FVector SpawnScale = FVector(ItemScale);
-
-
 
 				//アイテムをスポーンする。
 				AActor* const SpawnItem = World->SpawnActor<AActor>(ItemClass, SpawnLocation, SpawnRotation, SpawnParams);
 				SpawnItem->SetActorScale3D(SpawnScale);
 
 				//UE_LOG(LogTemp, Error, TEXT("SpawnLocation%f%f%f"), SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
+				UE_LOG(LogTemp, Warning, TEXT("ItemSpawnPoint%f%f%f"), ItemSpawnPoint->GetRelativeLocation().X, ItemSpawnPoint->GetRelativeLocation().Y, ItemSpawnPoint->GetRelativeLocation().Z);
 
 				ItemUse();
 
@@ -154,7 +153,7 @@ void UItemSettingComponent::ItemSettingRunOnServer_Implementation(int32 ItemNum)
 //	アイテムを出現させるメソッド
 void UItemSettingComponent::SpawnSetting()
 {
-	UE_LOG(LogTemp, Error, TEXT("SpawnSetting"));
+	//UE_LOG(LogTemp, Error, TEXT("SpawnSetting"));
 	//ネットワークの権限によって処理を変える
 	if (GetOwner()->HasAuthority())
 	{
@@ -178,17 +177,21 @@ void UItemSettingComponent::SpawnSetting()
 		FName RowName = FName(FString::FromInt(ItemNumber));
 		FItemStructCpp* ItemStruct = ItemDataTable->FindRow<FItemStructCpp>(RowName, FString("Error"));
 
-		UE_LOG(LogTemp, Error, TEXT("ItemHasAu"));
-
+		
 		//データテーブルから構造体に代入出来ていれば各アイテムの処理を行う。
 		if (ItemStruct)
 		{
-			UE_LOG(LogTemp, Error, TEXT("ItemStructSuccess"));
 			//アイテムの出現位置を設定
 			FVector ItemSpawnLocation = FVector(ItemStruct->SpawnPosX, 0.0f, 0.0f);
-			SpawnPoint = ItemSpawnLocation;
-			//ItemSpawnPoint->SetRelativeLocation(ItemSpawnLocation); // エラー原因ここが呼ばれない
-			UE_LOG(LogTemp, Error, TEXT("SpawnX = %f") , ItemStruct->SpawnPosX);
+			if (ItemSpawnPoint->GetAttachParent() != nullptr)
+			{
+				ItemSpawnPoint->SetRelativeLocation(ItemSpawnLocation);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("ItemSpawnNotParent"));
+			}
+			//UE_LOG(LogTemp, Error, TEXT("SpawnX = %f") , ItemStruct->SpawnPosX);
 
 			//アイテムの大きさを設定
 			ItemScale = ItemStruct->SpawnScale;

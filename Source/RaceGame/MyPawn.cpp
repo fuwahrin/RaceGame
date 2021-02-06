@@ -50,10 +50,10 @@ AMyPawn::AMyPawn()
 	
 
 	//移動コンポーネントの設定
-	MovementComponent = CreateDefaultSubobject<UMyCartMoveComponent>(TEXT("MovementComponent"));
+	Movement = CreateDefaultSubobject<UMyCartMoveComponent>(TEXT("Movement"));
 
 	//移動同期コンポーネント設定
-	MovementComponentReplicator = CreateDefaultSubobject<UMyCartMoveComponentReplicator>(TEXT("MovementComponentReplicator"));
+	MovementReplicator = CreateDefaultSubobject<UMyCartMoveComponentReplicator>(TEXT("MovementComponentReplicator"));
 
 	
 
@@ -116,16 +116,16 @@ void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AMyPawn::MoveForward(float value)
 {
-	if (MovementComponent == nullptr) return;
+	if (Movement == nullptr) return;
 
-	MovementComponent->SetThrottle(value);
+	Movement->SetThrottle(value);
 }
 
 void AMyPawn::MoveRight(float value)
 {
-	if (MovementComponent == nullptr) return;
+	if (Movement == nullptr) return;
 
-	MovementComponent->SetSteeringThrow(value);
+	Movement->SetSteeringThrow(value);
 }
 
 FString AMyPawn::GetEnumText(ENetRole role)

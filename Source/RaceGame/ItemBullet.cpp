@@ -7,12 +7,14 @@
 #include "MyPawn.h"
 #include "Components/SphereComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "MyCartMoveComponent.h"
+
 
 
 AItemBullet::AItemBullet()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	//同期設定
 	SetReplicates(true);
@@ -27,10 +29,6 @@ AItemBullet::AItemBullet()
 	ItemColision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	ItemColision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	
-	
-
-
-
 	//コンポーネントの設定
 	BulletMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("BulletMovement"));
 	BulletMovement->InitialSpeed = 3000.0f;
@@ -40,16 +38,10 @@ AItemBullet::AItemBullet()
 	BulletMovement->Friction = 0.0f;
 	BulletMovement->BounceVelocityStopSimulatingThreshold = 0.0f;
 
-	
-
 	ItemMesh->SetRelativeLocation(FVector(0.0f, 0.0 ,0.0f));
-
-
 
 	//変数の設定
 	bIsItemRespawn = false;
-
-	
 
 }
 

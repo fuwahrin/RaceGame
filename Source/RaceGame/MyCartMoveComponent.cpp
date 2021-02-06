@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Fill ot your copyright notice in the Description page of Project Settings.
 
 
 #include "MyCartMoveComponent.h"
@@ -14,7 +14,8 @@ UMyCartMoveComponent::UMyCartMoveComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// ...
+	//変数の設定
+	InitMaxDrivingForce = MaxDrivingForce;
 }
 
 
@@ -53,10 +54,12 @@ void UMyCartMoveComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 //移動作成
 FMyPawnMove UMyCartMoveComponent::CreateMove(float DeltaTime)
 {
+	
 	FMyPawnMove Move;
 	Move.DeltaTime = DeltaTime;
 	Move.SteeringThrow = SteeringThrow;
-	Move.Throttle = Throttle * SpeedUpRate;
+	Move.Throttle = Throttle * (SpeedUpRate * RoadSpeedRate);
+	//UE_LOG(LogTemp, Error, TEXT("Rate = %f"), Move,Throttle);
 	Move.Time = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
 
 	return Move;
@@ -107,6 +110,7 @@ void UMyCartMoveComponent::SimulateMove(const FMyPawnMove& move)
 	//アクセル力
 	FVector Force = GetOwner()->GetActorForwardVector() * MaxDrivingForce * move.Throttle;
 
+	
 	//空気抵抗
 	Force += GetAirResistance();
 	//摩擦力
@@ -120,9 +124,9 @@ void UMyCartMoveComponent::SimulateMove(const FMyPawnMove& move)
 	//速度計算
 	Velocity = Velocity + Accleration * move.DeltaTime;
 
-	//UE_LOG(LogTemp, Warning, TEXT("Velocity : %f%f%f"), Velocity.X , Velocity.Y , Velocity.Z);
+	//UE_LOG(LogTemp, Warning, TEXT("FORCE : %f"), Force.Size());
+	//UE_LOG(LogTemp, Warning, TEXT("Velocity : %f"), Velocity.Size());
 
-	
 
 	ApplyRotation(move.DeltaTime, move.SteeringThrow);
 
@@ -152,44 +156,43 @@ FVector UMyCartMoveComponent::GetRollingResistance()
 	return -Velocity.GetSafeNormal() * RollingResistanceCoefficient * NormalForce;
 }
 
-void UMyCartMoveComponent::SpeedCalc(float Rate, float DrivingForce)
+void UMyCartMoveComponent::SpeedCalc(float Rate)
 {
 
-	//スロットルの最大数を変更
-	MaxDrivingForce = DrivingForce;
 	//スロットルに与える乗算値を変更
 	SpeedUpRate = Rate;
 
-	UE_LOG(LogTemp, Warning, TEXT("Max = %f: Rate = %f") , MaxDrivingForce , SpeedUpRate);
-	
 }
 
 //速度調整のタイムイベント関数
-void UMyCartMoveComponent::SpeedCalcTimeEvent(float Rate , float MaxDriving , float CallTime)
+void UMyCartMoveComponent::SpeedCalcTimeEvent(float Rate , float CallTime)
 {
 	//イベント用のハンドラーとデリゲート変数を宣言
 	FTimerHandle SpeedHandler;
 	FTimerDelegate SpeedDelegate;
 
 	//速度調整の関数を登録
-	SpeedDelegate.BindUFunction(this, FName(TEXT("SpeedCalc")), Rate, MaxDriving);
+	SpeedDelegate.BindUFunction(this, FName(TEXT("SpeedCalc")), Rate);
 	
+	//UE_LOG(LogTemp, Warning, TEXT("RateInput = %f"), Rate);
+
 	//イベント登録した関数を呼ぶ
 	GetWorld()->GetTimerManager().SetTimer(SpeedHandler, SpeedDelegate, CallTime, false);
 }
 
 void UMyCartMoveComponent::SpeedUpEvent()
 {
-	SpeedCalcTimeEvent(3.0f, 30000.0f, 0.1f);
-	SpeedCalcTimeEvent(1.0f, 10000.0f, 1.1f);
+	//TODO:マジックNO修正
+	SpeedCalcTimeEvent(10.0f,  0.01f);
+	SpeedCalcTimeEvent(1.0f,  1.0f);
 }
 
 void UMyCartMoveComponent::CrashEvent()
 {
 	//速度をリセットする。
 	Velocity = FVector::ZeroVector;
-	SpeedCalcTimeEvent(0.0f, 0.0f, 0.1f);
-	SpeedCalcTimeEvent(1.0f, 10000.0f, 1.1f);
+	SpeedCalcTimeEvent(0.0f,  0.01f);
+	SpeedCalcTimeEvent(1.0f, 1.0f);
 }
 
 

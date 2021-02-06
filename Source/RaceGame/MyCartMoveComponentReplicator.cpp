@@ -52,6 +52,7 @@ void UMyCartMoveComponentReplicator::TickComponent(float DeltaTime, ELevelTick T
 		//UE_LOG(LogTemp, Warning, TEXT("Queue length: %d"), UnacknowledgedMoves.Num());
 		//サーバに移動情報を送信
 		Server_SendMove(LastMove);
+		//UE_LOG(LogTemp, Warning, TEXT("Thottole = %f"), LastMove.Throttle);
 
 	}
 
@@ -59,6 +60,7 @@ void UMyCartMoveComponentReplicator::TickComponent(float DeltaTime, ELevelTick T
 	//参考：https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Roles/index.html
 	if(GetOwner()->GetLocalRole() == ROLE_Authority && GetOwner()->GetInstigator<APawn>()->IsLocallyControlled())
 	{
+		//UE_LOG(LogTemp, Error, TEXT("Server"));
 		//サーバーの移動情報を更新する
 		UpdateServerState(LastMove);
 	}
@@ -66,11 +68,29 @@ void UMyCartMoveComponentReplicator::TickComponent(float DeltaTime, ELevelTick T
 	//クライアント側で複製されているPawnなら
 	if (GetOwnerRole() == ROLE_SimulatedProxy)
 	{
+		//UE_LOG(LogTemp, Error, TEXT("Cliant"));
+
 		CliantTick(DeltaTime);
 	}
 
 }
 
+//インプットイベント（前進）
+bool UMyCartMoveComponentReplicator::Server_SendMove_Validate(FMyPawnMove move)
+{
+	return true;
+}
+
+void UMyCartMoveComponentReplicator::Server_SendMove_Implementation(FMyPawnMove move)
+{
+	if (MovementComponent == nullptr) return;
+
+	MovementComponent->SimulateMove(move);
+
+	UpdateServerState(move);
+
+
+}
 
 void UMyCartMoveComponentReplicator::UpdateServerState(const FMyPawnMove& move)
 {
@@ -187,22 +207,6 @@ void UMyCartMoveComponentReplicator::ClearUnacknowledgedMoves(FMyPawnMove LastMo
 }
 
 
-//インプットイベント（前進）
-bool UMyCartMoveComponentReplicator::Server_SendMove_Validate(FMyPawnMove move)
-{
-	return true;
-}
-
-void UMyCartMoveComponentReplicator::Server_SendMove_Implementation(FMyPawnMove move)
-{
-	if (MovementComponent == nullptr) return;
-
-	MovementComponent->SimulateMove(move);
-
-	UpdateServerState(move);
-
-
-}
 
 void UMyCartMoveComponentReplicator::OnRep_ServerState()
 {

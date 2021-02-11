@@ -4,6 +4,8 @@
 #include "MyPawn.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "Sound/SoundCue.h"
+#include "Components/AudioComponent.h"
 #include "ItemSettingComponent.h"
 #include "MyCartMoveComponent.h"
 #include "MyCartMoveComponentReplicator.h"
@@ -62,6 +64,13 @@ AMyPawn::AMyPawn()
 	RightRayPoint->SetupAttachment(MeshOffSetRoot);
 	RightRayPoint->SetRelativeLocation(FVector(0.0f, 30.0f, 0.0f));
 
+	// Setup the audio component and allocate it a sound cue
+	static ConstructorHelpers::FObjectFinder<USoundCue> SoundCue(TEXT("/Game/VehicleAdv/Sound/Engine_Loop_CueMyPawn.Engine_Loop_CueMyPawn"));
+	
+	EngineSoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("EngineSound"));
+	EngineSoundComponent->SetSound(SoundCue.Object);
+	EngineSoundComponent->SetupAttachment(CarMesh);
+
 	///---ActorComponentの設定
 	//アイテム設定のコンポーネント
 	ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
@@ -111,6 +120,11 @@ void AMyPawn::Tick(float DeltaTime)
 	Movement->RoadSpeedRate = forwardState * backwardState * leftState * rightState;
 	//UE_LOG(LogTemp, Warning, TEXT("SpeedUpRate = %f"), Movement->SpeedUpRate);
 
+	float AudioScale = FVector::DotProduct(GetActorForwardVector(), Movement->Velocity);
+	AudioScale = FMath::Clamp<float>(AudioScale ,0.0f , 2500.0f);
+	EngineSoundComponent->SetFloatParameter("RPM", AudioScale);
+	//UE_LOG(LogTemp, Warning, TEXT("AudioScale = %f"), AudioScale);
+
 }
 
 
@@ -128,19 +142,19 @@ void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	//アイテム出現ボタン
 	//ネットワークの権限を確認
-	if (this->HasAuthority())
-	{
-		//サーバー側ならマルチキャスト
-		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseMultiCast);
-	
-	}
-	else
-	{
-		//クライアント側ならサーバで実行させる。
-		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseRunonServer);
-	}
+	//if (this->HasAuthority())
+	//{
+	//	//サーバー側ならマルチキャスト
+	//	PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseMultiCast);
+	//
+	//}
+	//else
+	//{
+	//	//クライアント側ならサーバで実行させる。
+	//	PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseRunonServer);
+	//}
 
-	//PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUse);
+	PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUse);
 }
 
 void AMyPawn::ItemUseMultiCast()

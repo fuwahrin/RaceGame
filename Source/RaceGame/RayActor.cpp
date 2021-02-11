@@ -43,11 +43,14 @@ void ARayActor::RayTrace()
 		DrawDebugLine(GetWorld(), StartPoint, EndPoint, FColor::Red, false, 1.0f, 0, 1);
 		if (GetWorld()->LineTraceSingleByChannel(hit, StartPoint, EndPoint, ECC_Visibility, query))
 		{
-			FString Name = hit.GetActor()->GetFName().ToString();
-			//ヒットしたコンポーネントのタグを取得
-			CurrentState = hit.GetComponent()->ComponentTags[0];
-			//UE_LOG(LogTemp, Error, TEXT("HitName = %s") , *Name);
-			//UE_LOG(LogTemp, Warning, TEXT("%s"), *CurrentState.ToString());
+			if (IsValid(hit.GetActor()))
+			{
+				FString Name = hit.GetActor()->GetFName().ToString();
+				//ヒットしたコンポーネントのタグを取得
+				CurrentState = hit.GetComponent()->ComponentTags[0];
+				//UE_LOG(LogTemp, Error, TEXT("HitName = %s") , *Name);
+				//UE_LOG(LogTemp, Warning, TEXT("%s"), *CurrentState.ToString());
+			}
 
 		}
 	}

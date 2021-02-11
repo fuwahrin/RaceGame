@@ -89,6 +89,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite , meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float RoadSpeedRate = 1.0f;
 
+	//ÉJÅ[ÉuéûÇÃå∏ë¨
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float SteeringRate = 1.0f;
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

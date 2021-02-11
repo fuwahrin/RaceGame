@@ -7,6 +7,20 @@
 #include "ItemSettingComponent.generated.h"
 
 
+USTRUCT()
+struct FItemState
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	bool IsUse;
+
+
+	UPROPERTY()
+	int32 ItemNum;
+
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RACEGAME_API UItemSettingComponent : public UActorComponent
 {
@@ -38,24 +52,24 @@ protected:
 	APawn *OwnerPawn;
 
 	//アイテムのID
-	UPROPERTY(Replicated ,VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(/*Replicated ,*/VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	int32 ItemNumber;
 
 	//アイテムが使用できる状態か確認する変数
-	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(/*Replicated ,*/ EditDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	bool bIsItemUse;
 
 	//スポーンさせる際のScale
-	UPROPERTY(Replicated, VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(/*Replicated ,*/ VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	float ItemScale;
 
 	//Spanwさせるアイテム
-	UPROPERTY(Replicated, VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(/*Replicated ,*/ VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<class AActor> ItemClass;
 
 
 	//アイテムの画像
-	UPROPERTY(Replicated, VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(/*Replicated ,*/ VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		class UTexture2D* DrawIcon;
 
 	//アイテムの種類
@@ -74,6 +88,18 @@ protected:
 
 	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DataTable")
 	class UMyCartMoveComponentReplicator *MoveReplicateComponent;
+
+	//サーバーの状態
+	UPROPERTY(Replicated)
+	FItemState ServerItemState;
+
+	FItemState LocalItemState;
+
+	UFUNCTION(Server, Reliable, WithValidation)
+    void Server_SendItemSpawn(int itemnum);
+
+	UFUNCTION()
+	void ItemCreate(int32 ItemNum);
 
 
 
@@ -103,7 +129,7 @@ public:
 	//アイテムを出現させるメソッド
 	UFUNCTION(NetMulticast, reliable)
 	void SpawnItemMulticast();
-
+	
 	UFUNCTION(Server, reliable)
 	void SpawnItemRunonServer();
 

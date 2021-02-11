@@ -48,7 +48,7 @@ void AItemBox::ItemHit(AMyPawn* HitPawn)
 	SelectItemNumber = FMath::RandRange(randMin, randMax);
 
 	UItemSettingComponent* ItemSetting = HitPawn->FindComponentByClass<UItemSettingComponent>();
-	if (ItemSetting != nullptr)
+	if (ItemSetting != nullptr && HitPawn->IsLocallyControlled())
 	{
 		ItemSetting->ItemPickup(SelectItemNumber);
 	}

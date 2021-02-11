@@ -117,13 +117,16 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
 		class UUserWidget *GameUi;
 
+	//AudioComponent
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UAudioComponent* EngineSoundComponent;
+
 
 	//ïœêîéQè∆óp
 	ARayActor* RayForward;
 	ARayActor* RayBackward;
 	ARayActor* RayLeft;
 	ARayActor* RayRight;
-
 
 	
 public:	

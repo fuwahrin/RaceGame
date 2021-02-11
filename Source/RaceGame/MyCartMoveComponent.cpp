@@ -53,11 +53,21 @@ void UMyCartMoveComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 //移動作成
 FMyPawnMove UMyCartMoveComponent::CreateMove(float DeltaTime)
 {
-	
+	//カーブ時の減速値設定
+	if (SteeringThrow != 0.0f)
+	{
+		SteeringRate = 0.5f;
+	}
+	else
+	{
+		SteeringRate = 1.0f;
+	}
+
+	//UE_LOG(LogTemp, Error, TEXT("SteeringRate = %f"), SteeringRate);
 	FMyPawnMove Move;
 	Move.DeltaTime = DeltaTime;
 	Move.SteeringThrow = SteeringThrow;
-	Move.Throttle = Throttle * (SpeedUpRate * RoadSpeedRate);
+	Move.Throttle = (Throttle * (SpeedUpRate * RoadSpeedRate) * SteeringRate );
 	Move.Time = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
 
 	return Move;

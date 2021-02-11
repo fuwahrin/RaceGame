@@ -17,7 +17,7 @@ UItemSettingComponent::UItemSettingComponent()
 	bIsItemUse = false;
 
 	//このコンポーネントの同期を有効にする
-	//SetIsReplicatedByDefault(true);
+	SetIsReplicatedByDefault(true);
 
 
 	//データテーブルの初期化

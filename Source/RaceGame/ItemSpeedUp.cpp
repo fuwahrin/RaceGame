@@ -22,7 +22,7 @@ AItemSpeedUp::AItemSpeedUp()
 	ItemMesh->SetRelativeLocation(FVector(0.0f, 0.0, 0.0f));
 
 	//“¯Šúİ’è
-	SetReplicates(true);
+	//SetReplicates(true);
 
 
 }

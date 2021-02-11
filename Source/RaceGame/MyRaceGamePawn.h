@@ -25,6 +25,11 @@ class RACEGAME_API AMyRaceGamePawn : public ARaceGamePawn
 	GENERATED_BODY()
 
 protected:
+
+	// アクセル値から減算する変数
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
+	float DownSpeedOffset;
+
 	//==========================コンポーネント
 
 	//オフロードチェック用のコライダー
@@ -38,88 +43,24 @@ protected:
 	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USphereComponent* BackwardCollision;
 
+	//アイテム管理を行うコンポーネント
 	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UItemSettingComponent* ItemSettingComponent;
 
+	//UWGを管理するコンポーネント
+	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class UUIManagerComponent* UIManagerComponent;
+
+	//レース状態を管理するコンポーネント
+	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class URaceSettingComponent* RaceSettingComponent;
 
 
 protected:
-	//==========================変数
-	//UIのインスタンス
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<class UUserWidget> GameUiClass;
-
-	//UIの実数を格納する変数
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
-		class UUserWidget *GameUi;
-
 	
 	
 	//ブレーキ解除のタイムハンドラー
 	FTimerHandle BrakeTimeHandler;
-
-	//ゴールに必要なラップ数
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		int32 GoalLap;
-
-	//現在何ラップ走ったかカウントする変数
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		int32 LapCounter;
-
-	//チェックポイントに到達したか
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		bool bIsCheckPoint;
-
-	//ゴール用のUI
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<class UUserWidget> GoalWidgetClass;
-
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
-	class UUserWidget* GoalWidget;
-
-	//ゴールしたか判定すつフラグ
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-	bool bIsGoal;
-	
-	//チェックポイントのアクター検索用
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		TSubclassOf < class AActor > CheckPointActorClass;
-
-	//チェックポイントの見つかった数を格納する変数
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		int32 CheckPointCounter;
-
-	//チェックポイントを通った数を数える変数
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		int32 CurrentCheckPoint;
-
-	//アクセル値から減算する変数
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		float DownSpeedOffset;
-
-	//参加人数判定
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		int32 GamePlayerNum;
-
-	//ゲームインスタンス
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Race")
-		class URaceGameInstance* RaceGameInstance;
-
-	//ゲーム時間のカウント処理
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		bool bisTimerStart;
-
-	//時間カウント用のタイマーハンドラー
-	FTimerHandle GameTimerCountHandler;
-
-	//ゲーム時間カウント変数
-	UPROPERTY(Replicated ,VisibleDefaultsOnly, BlueprintReadOnly, Category = "Race")
-		float GameTimer;
-
-
-
-
-
 
 
 protected:
@@ -135,9 +76,7 @@ protected:
 	// Begin Pawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 
-	//　同期するプロパティ
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	
 	//inputcalc変数のセッター
 	UFUNCTION()
 		void InputReset();
@@ -155,13 +94,6 @@ public:
 		void AccelSetting(UPrimitiveComponent* HitComponent , bool bIsSpeedDown);
 
 
-	//ゴール判定の処理
-	UFUNCTION(BlueprintCallable)
-		void GoalCheck();
-	
-	//チェックポイント到達判定処理
-	UFUNCTION(BlueprintCallable)
-		void CheckPointRun();
 
 	//リスポーン処理（転倒時の救済）
 	UFUNCTION()
@@ -174,13 +106,11 @@ public:
 	UFUNCTION()
 		void MoveTitle();
 
+	
 	//ゲーム終了
 	UFUNCTION()
 		void GameEnd();
 
-	//ゲーム時間カウント
-	UFUNCTION()
-		void GameTimeCounter();
 
 	UFUNCTION()
 		void ItemUseMultiCast();

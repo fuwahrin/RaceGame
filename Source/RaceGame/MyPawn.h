@@ -18,36 +18,54 @@ public:
 	///コンポーネント	
 	//移動コンポーネント
 	UPROPERTY(VisibleAnywhere , BlueprintReadOnly)
-	class UMyCartMoveComponent* Movement;
+		class UMyCartMoveComponent* Movement;
 
 	//同期移動コンポーネント
 	UPROPERTY(VisibleAnywhere , BlueprintReadOnly)
-	class UMyCartMoveComponentReplicator* MovementReplicator;
+		class UMyCartMoveComponentReplicator* MovementReplicator;
 
 	//アイテム設定のコンポーネント
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	class UItemSettingComponent* ItemSettingComponent;
+		class UItemSettingComponent* ItemSettingComponent;
 	
 
 	//コライダー
 	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UBoxComponent* BoxCollision;
+		class UBoxComponent* BoxCollision;
 
 	//メッシュのオフセット
 	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class USceneComponent* MeshOffSetRoot;
+		class USceneComponent* MeshOffSetRoot;
 
 	//メッシュ
 	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class USkeletalMeshComponent* CarMesh;
+		class USkeletalMeshComponent* CarMesh;
 
 	/** Spring arm that will offset the camera */
 	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* SpringArm;
+		class USpringArmComponent* SpringArm;
 
 	/** Camera component that will be our viewpoint */
 	UPROPERTY(Category = Camera, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* Camera;
+		class UCameraComponent* Camera;
+
+	//レイトレースの起点となるSceneComponent
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class USceneComponent *ForwardRayPoint;
+
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class USceneComponent *BackwardRayPoint;
+
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class USceneComponent *LeftRayPoint;
+
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class USceneComponent *RightRayPoint;
+
+
+
+
+
 
 
 protected:
@@ -70,6 +88,44 @@ protected:
 	UFUNCTION()
 	void ItemUseRunonServer();
 
+	UFUNCTION()
+	void ItemUse();
+	//道路判定
+	UFUNCTION()
+	float RoadSpeedCalcFunction(class ARayActor *rayActor);
+
+	UFUNCTION()
+	ARayActor* SpawnRayActor(USceneComponent *parent);
+
+	//レイトレース用のBP参照用
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ARayActor>RayActorClass;
+
+	//ゴールに必要なラップ数
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
+		int32 GoalLap;
+
+	//現在何ラップ走ったかカウントする変数
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
+		int32 LapCounter;
+
+	//UIのインスタンス
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<class UUserWidget> GameUiClass;
+
+	//UIの実数を格納する変数
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
+		class UUserWidget *GameUi;
+
+
+	//変数参照用
+	ARayActor* RayForward;
+	ARayActor* RayBackward;
+	ARayActor* RayLeft;
+	ARayActor* RayRight;
+
+
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -77,6 +133,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	
 
 
 };

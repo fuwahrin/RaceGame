@@ -41,22 +41,23 @@ void UMyCartMoveComponentReplicator::TickComponent(float DeltaTime, ELevelTick T
 
 	//権限によって各Pawnの動きを作成
 
-	//クライアント側で操作しているPawnの動きの処理
+	//クライアント側で操作しているPawnの動きをサーバーに複製させる
 	if (GetOwnerRole() == ROLE_AutonomousProxy)
 	{
-
+	
 		//サーバーが未確認の動きを登録
 		UnacknowledgedMoves.Add(MovementComponent->LastMove);
-
+	
 		//未確認の動きの数を確認
 		//UE_LOG(LogTemp, Warning, TEXT("Queue length: %d"), UnacknowledgedMoves.Num());
 		//サーバに移動情報を送信
 		Server_SendMove(LastMove);
 		//UE_LOG(LogTemp, Warning, TEXT("Thottole = %f"), LastMove.Throttle);
-
+	
 	}
 
-	//サーバー側で自身が操作するPawnなら ※RemoteRoleはマップ遷移すると正しい所有者を取得できない為使用せず
+	//サーバー側で自身が操作するPawnの動きをクライアント側に複製させる
+	//※RemoteRoleはマップ遷移すると正しい所有者を取得できない為使用せず
 	//参考：https://docs.unrealengine.com/en-US/InteractiveExperiences/Networking/Actors/Roles/index.html
 	if(GetOwner()->GetLocalRole() == ROLE_Authority && GetOwner()->GetInstigator<APawn>()->IsLocallyControlled())
 	{
@@ -64,12 +65,12 @@ void UMyCartMoveComponentReplicator::TickComponent(float DeltaTime, ELevelTick T
 		//サーバーの移動情報を更新する
 		UpdateServerState(LastMove);
 	}
-
+	
 	//クライアント側で複製されているPawnなら
 	if (GetOwnerRole() == ROLE_SimulatedProxy)
 	{
 		//UE_LOG(LogTemp, Error, TEXT("Cliant"));
-
+	
 		CliantTick(DeltaTime);
 	}
 
@@ -225,6 +226,11 @@ void UMyCartMoveComponentReplicator::OnRep_ServerState()
 
 	}
 	
+}
+
+FVector UMyCartMoveComponentReplicator::GetSimulateLocation()
+{
+	return MeshOffsetRoot->GetComponentLocation();
 }
 
 void UMyCartMoveComponentReplicator::SimulatedProxy_OnRep_ServerState()

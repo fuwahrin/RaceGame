@@ -84,8 +84,18 @@ private:
 
 	UFUNCTION()
 	void OnRep_ServerState();
+
+public:
+	UFUNCTION()
+	FVector GetSimulateLocation();
+
+
+	
+	
 	void SimulatedProxy_OnRep_ServerState();
 	void AutonomousProxy_OnRep_ServerState();
+
+	
 
 	//サーバーの移動状態を更新する
 	void UpdateServerState(const FMyPawnMove& move);

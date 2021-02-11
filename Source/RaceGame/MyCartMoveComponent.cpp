@@ -41,7 +41,6 @@ void UMyCartMoveComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 		GetOwner()->GetLocalRole() == ROLE_Authority && GetOwner()->GetInstigator<APawn>()->IsLocallyControlled())//サーバ側で操作しているか※（）RemoteRoleはマップ遷移すると正しい所有者を取得できない為使用せず
 	{
 
-		//GetOwner()->get
 		//動きを作成
 		LastMove = CreateMove(DeltaTime);
 
@@ -59,7 +58,6 @@ FMyPawnMove UMyCartMoveComponent::CreateMove(float DeltaTime)
 	Move.DeltaTime = DeltaTime;
 	Move.SteeringThrow = SteeringThrow;
 	Move.Throttle = Throttle * (SpeedUpRate * RoadSpeedRate);
-	//UE_LOG(LogTemp, Error, TEXT("Rate = %f"), Move,Throttle);
 	Move.Time = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
 
 	return Move;

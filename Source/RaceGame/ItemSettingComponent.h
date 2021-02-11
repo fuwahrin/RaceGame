@@ -38,7 +38,7 @@ protected:
 	APawn *OwnerPawn;
 
 	//アイテムのID
-	UPROPERTY(Replicated, VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Replicated ,VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	int32 ItemNumber;
 
 	//アイテムが使用できる状態か確認する変数
@@ -59,27 +59,29 @@ protected:
 		class UTexture2D* DrawIcon;
 
 	//アイテムの種類
-	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(/*Replicated ,*/ EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AActor> BulletItem;
 
-	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(/*Replicated ,*/ EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AActor> SlipItem;
 
-	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(/*Replicated ,*/ EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AActor> SpeedUpItem;
 
 	//データテーブル
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DataTable")
 		class UDataTable* ItemDataTable;
 
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DataTable")
+	class UMyCartMoveComponentReplicator *MoveReplicateComponent;
+
+
+
 
 
 
 protected:
 	//----関数
-	UFUNCTION()
-		void SpawnItem();
-
 	//アイテムを使用したときのメソッド
 	UFUNCTION()
 		void ItemUse();
@@ -102,8 +104,12 @@ public:
 	UFUNCTION(NetMulticast, reliable)
 	void SpawnItemMulticast();
 
-	UFUNCTION(Server, reliable, WithValidation)
+	UFUNCTION(Server, reliable)
 	void SpawnItemRunonServer();
+
+	UFUNCTION()
+	void SpawnItem();
+
 
 	//アイテムを取得するときに呼ばれるメソッド
 	UFUNCTION()
@@ -113,6 +119,8 @@ public:
 	UFUNCTION()
 		void SetItemUse(bool value) { bIsItemUse = value; }
 
+	UFUNCTION()
+		FString GetRole(ENetRole role);
 	
 
 	

@@ -82,11 +82,11 @@ private:
 	
 public:
 	//アイテムの加速地
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite , meta = (ClampMin = "0.0" , ClampMax = "1.0"))
 	float SpeedUpRate =1.0f;
 
 	//道路の速度調整用の値
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite , meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float RoadSpeedRate = 1.0f;
 
 

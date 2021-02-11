@@ -10,6 +10,8 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "ItemBase.h"
+#include "RayActor.h"
 
 // Sets default values
 AMyPawn::AMyPawn()
@@ -43,21 +45,32 @@ AMyPawn::AMyPawn()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
 
-	
+	//レイトレースの起点
+	ForwardRayPoint = CreateDefaultSubobject<USceneComponent>(TEXT("RayForward"));
+	ForwardRayPoint->SetupAttachment(MeshOffSetRoot);
+	ForwardRayPoint->SetRelativeLocation(FVector(70.0f, 0.0f, 0.0f));
+
+	BackwardRayPoint = CreateDefaultSubobject<USceneComponent>(TEXT("RayBackward"));
+	BackwardRayPoint->SetupAttachment(MeshOffSetRoot);
+	BackwardRayPoint->SetRelativeLocation(FVector(-70.0f, 0.0f, 0.0f));
+
+	LeftRayPoint = CreateDefaultSubobject<USceneComponent>(TEXT("RayLeft"));
+	LeftRayPoint->SetupAttachment(MeshOffSetRoot);
+	LeftRayPoint->SetRelativeLocation(FVector(0.0f, -30.0f, 0.0f));
+
+	RightRayPoint = CreateDefaultSubobject<USceneComponent>(TEXT("RayRight"));
+	RightRayPoint->SetupAttachment(MeshOffSetRoot);
+	RightRayPoint->SetRelativeLocation(FVector(0.0f, 30.0f, 0.0f));
+
+	///---ActorComponentの設定
 	//アイテム設定のコンポーネント
 	ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
 	ItemSettingComponent->ItemSpawnPoint->SetupAttachment(MeshOffSetRoot);
-	
 
 	//移動コンポーネントの設定
 	Movement = CreateDefaultSubobject<UMyCartMoveComponent>(TEXT("Movement"));
-
 	//移動同期コンポーネント設定
 	MovementReplicator = CreateDefaultSubobject<UMyCartMoveComponentReplicator>(TEXT("MovementComponentReplicator"));
-
-	
-
-
 }
 // Called when the game starts or when spawned
 void AMyPawn::BeginPlay()
@@ -71,7 +84,13 @@ void AMyPawn::BeginPlay()
 	{
 		NetUpdateFrequency = 1.0f;
 	}
-	
+
+	//レイトレースアクターをスポーンする。
+	RayForward = SpawnRayActor(ForwardRayPoint);
+	RayBackward = SpawnRayActor(BackwardRayPoint);
+	RayLeft = SpawnRayActor(LeftRayPoint);
+	RayRight = SpawnRayActor(RightRayPoint);
+
 }
 
 
@@ -81,6 +100,16 @@ void AMyPawn::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	//プレイヤーの権限をデバッグ表示
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
+
+	//レイトレース
+	float forwardState =  RoadSpeedCalcFunction(RayForward);
+	float backwardState = RoadSpeedCalcFunction(RayBackward);
+	float leftState = RoadSpeedCalcFunction(RayLeft);
+	float rightState = RoadSpeedCalcFunction(RayRight);
+
+	//道路状態の速度を設定
+	Movement->RoadSpeedRate = forwardState * backwardState * leftState * rightState;
+	//UE_LOG(LogTemp, Warning, TEXT("SpeedUpRate = %f"), Movement->SpeedUpRate);
 
 }
 
@@ -103,7 +132,7 @@ void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	{
 		//サーバー側ならマルチキャスト
 		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseMultiCast);
-
+	
 	}
 	else
 	{
@@ -111,8 +140,34 @@ void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseRunonServer);
 	}
 
+	//PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUse);
 }
 
+void AMyPawn::ItemUseMultiCast()
+{
+	//UE_LOG(LogTemp, Log, TEXT("ItemUseMultiCast(1)"));
+	if (ItemSettingComponent != nullptr)
+	{
+		//UE_LOG(LogTemp, Log, TEXT("ItemUseMultiCast(2)"));
+		ItemSettingComponent->SpawnItemMulticast();
+	}
+}
+
+void AMyPawn::ItemUseRunonServer()
+{
+	if (ItemSettingComponent != nullptr)
+	{
+		ItemSettingComponent->SpawnItemRunonServer();
+	}
+}
+
+void AMyPawn::ItemUse()
+{
+	if (ItemSettingComponent != nullptr)
+	{
+		ItemSettingComponent->SpawnItem();
+	}
+}
 
 void AMyPawn::MoveForward(float value)
 {
@@ -147,21 +202,51 @@ FString AMyPawn::GetEnumText(ENetRole role)
 	}
 }
 
-void AMyPawn::ItemUseMultiCast()
+
+
+float AMyPawn::RoadSpeedCalcFunction(ARayActor *rayActor)
 {
-	//UE_LOG(LogTemp, Log, TEXT("ItemUseMultiCast(1)"));
-	if (ItemSettingComponent != nullptr)
+	float SpeedRate = 1.0f;
+	//道路のレイ判定を取得
+	if (rayActor->IsStateChange())
 	{
-		//UE_LOG(LogTemp, Log, TEXT("ItemUseMultiCast(2)"));
-		ItemSettingComponent->SpawnItemMulticast();
+		if (rayActor->GetRayHitState() == FName("Road"))
+		{
+			if (SpeedRate < 1.0f)
+			{
+				SpeedRate += 0.3f;
+			}
+		}
+		else
+		{
+			if (SpeedRate < 0.1f)
+			{
+				SpeedRate = 0.1f;
+			}
+			else
+			{
+				SpeedRate -= 0.3f;
+			}
+		}
 	}
+
+	return SpeedRate;
 }
 
-void AMyPawn::ItemUseRunonServer()
+ARayActor* AMyPawn::SpawnRayActor(USceneComponent * parent)
 {
-	if (ItemSettingComponent != nullptr)
-	{
-		ItemSettingComponent->SpawnItemRunonServer();
-	}
+	ARayActor* SpawnActor;
+	//レイトーレス用のアクターをSpawnする。
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.bNoFail = true;
+	//スポーン位置の設定(ItemSpawnPointのワールド座標を格納)
+	FVector SpawnLocation = FVector::ZeroVector;
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+	//スポーンする際のScale
+	FVector SpawnScale = FVector::OneVector;
+	SpawnActor = GetWorld()->SpawnActor<ARayActor>(RayActorClass, SpawnLocation, SpawnRotation, SpawnParams);
+	SpawnActor->AttachToComponent(parent , { EAttachmentRule::KeepRelative , true });
+
+	return SpawnActor;
 }
 

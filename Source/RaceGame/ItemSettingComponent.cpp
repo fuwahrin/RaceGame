@@ -4,7 +4,7 @@
 #include "ItemSettingComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "ItemRefActor.h"
-
+#include "MyCartMoveComponentReplicator.h"
 
 // Sets default values for this component's properties
 UItemSettingComponent::UItemSettingComponent()
@@ -17,7 +17,7 @@ UItemSettingComponent::UItemSettingComponent()
 	bIsItemUse = false;
 
 	//このコンポーネントの同期を有効にする
-	SetIsReplicatedByDefault(true);
+	//SetIsReplicatedByDefault(true);
 
 
 	//データテーブルの初期化
@@ -42,6 +42,9 @@ void UItemSettingComponent::BeginPlay()
 	//所有者のPawnを取得
 	OwnerPawn = GetOwner()->GetInstigator<APawn>();
 
+	MoveReplicateComponent = GetOwner()->FindComponentByClass<UMyCartMoveComponentReplicator>();
+
+
 	
 	
 }
@@ -60,19 +63,24 @@ void UItemSettingComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 void UItemSettingComponent::SpawnItemMulticast_Implementation()
 {
 	SpawnItem();
+	UE_LOG(LogTemp, Warning, TEXT("Server: %s") ,*GetRole(GetOwnerRole()));
+	
 }
 
 
 void UItemSettingComponent::SpawnItemRunonServer_Implementation()
 {
 	SpawnItem();
+	UE_LOG(LogTemp, Warning, TEXT("Cliant: %s"), *GetRole(GetOwner()->GetRemoteRole()));
+
 }
 
 // アイテムを出現させるメソッド
 void UItemSettingComponent::SpawnItem()
 {
-	if (OwnerPawn != nullptr)
+	if (OwnerPawn != nullptr && MoveReplicateComponent != nullptr)
 	{
+		//UE_LOG(LogTemp, Error, TEXT("bIsItemUse = %d"), bIsItemUse);
 		//アイテムが使用できる状態か確認
 		if (bIsItemUse)
 		{
@@ -89,16 +97,34 @@ void UItemSettingComponent::SpawnItem()
 				//スポーン位置の設定(ItemSpawnPointのワールド座標を格納)
 				FVector SpawnLocation = ItemSpawnPoint->GetComponentLocation();
 				FRotator SpawnRotation = ItemSpawnPoint->GetComponentRotation();
+
+
 				
 				//スポーンする際のScale
 				FVector SpawnScale = FVector(ItemScale);
 
-				//アイテムをスポーンする。
-				AActor* const SpawnItem = World->SpawnActor<AActor>(ItemClass, SpawnLocation, SpawnRotation, SpawnParams);
-				SpawnItem->SetActorScale3D(SpawnScale);
+				//AActor* const SpawnItem = World->SpawnActor<AActor>(ItemClass, SpawnLocation, SpawnRotation, SpawnParams);
+				//SpawnItem->SetActorScale3D(SpawnScale);
+
+				//サーバ側の操作者のみ
+				if (GetOwner()->GetLocalRole() == ROLE_Authority && GetOwner()->GetInstigator<APawn>()->IsLocallyControlled())
+				{
+					AActor* const SpawnItem = World->SpawnActor<AActor>(ItemClass, SpawnLocation, SpawnRotation, SpawnParams);
+					SpawnItem->SetActorScale3D(SpawnScale);
+					//UE_LOG(LogTemp, Warning, TEXT("Server"));
+					
+				}
+				
+				//クライアント側の操作者のみ
+				if (GetOwner()->GetRemoteRole() == ROLE_AutonomousProxy)
+				{
+					AActor* const SpawnItem = World->SpawnActor<AActor>(ItemClass, SpawnLocation, SpawnRotation, SpawnParams);
+					SpawnItem->SetActorScale3D(SpawnScale);
+					//UE_LOG(LogTemp, Warning, TEXT("Cliant"));
+				}
 
 				//UE_LOG(LogTemp, Error, TEXT("SpawnLocation%f%f%f"), SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
-				UE_LOG(LogTemp, Warning, TEXT("ItemSpawnPoint%f%f%f"), ItemSpawnPoint->GetRelativeLocation().X, ItemSpawnPoint->GetRelativeLocation().Y, ItemSpawnPoint->GetRelativeLocation().Z);
+				//UE_LOG(LogTemp, Warning, TEXT("ItemSpawnPoint%f%f%f"), ItemSpawnPoint->GetRelativeLocation().X, ItemSpawnPoint->GetRelativeLocation().Y, ItemSpawnPoint->GetRelativeLocation().Z);
 
 				ItemUse();
 
@@ -107,13 +133,6 @@ void UItemSettingComponent::SpawnItem()
 	}
 }
 
-
-//RPC呼び出し検証用のメソッド
-//※falseを返すとRPCが実行されない
-bool UItemSettingComponent::SpawnItemRunonServer_Validate()
-{
-	return true;
-}
 
 // アイテムを使用するメソッド
 void UItemSettingComponent::ItemUse()
@@ -130,33 +149,18 @@ void UItemSettingComponent::ItemUse()
 	ItemNumber = 0;
 }
 
-//アイテムの設定を行うメソッド
-void UItemSettingComponent::ItemSetting(int32 ItemNum)
-{
-	//アイテムのIDを設定
-	ItemNumber = ItemNum;
-
-
-	//出現する際の設定
-	SpawnSetting();
-
-	//アイテムを使用できる状態に変更
-	bIsItemUse = true;
-}
-
-void UItemSettingComponent::ItemSettingRunOnServer_Implementation(int32 ItemNum)
-{
-	ItemSetting(ItemNum);
-}
 
 
 //	アイテムを出現させるメソッド
 void UItemSettingComponent::SpawnSetting()
 {
-	//UE_LOG(LogTemp, Error, TEXT("SpawnSetting"));
+	
+	float LastMoveAdjuster = 0.0f;
 	//ネットワークの権限によって処理を変える
 	if (GetOwner()->HasAuthority())
 	{
+		//UE_LOG(LogTemp, Error, TEXT("%s:SpawnSetting:ItemNumber = %d"),GetOwner()->GetRemoteRole(), ItemNumber);
+
 		//サーバ側
 
 		//ItemClassをIDによって設定する。
@@ -171,6 +175,7 @@ void UItemSettingComponent::SpawnSetting()
 			break;
 		case 3:
 			ItemClass = SpeedUpItem;
+			
 			break;
 		}
 
@@ -191,23 +196,29 @@ void UItemSettingComponent::SpawnSetting()
 			{
 				UE_LOG(LogTemp, Error, TEXT("ItemSpawnNotParent"));
 			}
-			//UE_LOG(LogTemp, Error, TEXT("SpawnX = %f") , ItemStruct->SpawnPosX);
-
 			//アイテムの大きさを設定
 			ItemScale = ItemStruct->SpawnScale;
 
 			//アイコン設定
 			DrawIcon = ItemStruct->Icon;
-		}
+			//UE_LOG(LogTemp, Error, TEXT("Icon = %s") , *ItemStruct->Icon->GetName());
 
+		}
 	}
 	else
 	{
 		//クライアント側
 		SpawnSettingRunOnServer();
 	}
-
 }
+
+
+void UItemSettingComponent::SpawnSettingRunOnServer_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Cliant:SpawnSetting"));
+	SpawnSetting();
+}
+
 
 
 //	アイテム取得メソッド
@@ -217,23 +228,67 @@ void UItemSettingComponent::ItemPickup(int ItemNum)
 	if (GetOwner()->HasAuthority())
 	{
 		//サーバー側の処理
-
+	
 		//アイテムの設定を行う。
 		ItemSetting(ItemNum);
 	}
 	else
 	{
 		//クライアント側の処理
-
+		UE_LOG(LogTemp, Warning, TEXT("PickUp"));
 		//アイテム設定をサーバで実行する。
 		ItemSettingRunOnServer(ItemNum);
 	}
+
+	//ItemSetting(ItemNum);
 }
 
-void UItemSettingComponent::SpawnSettingRunOnServer_Implementation()
+FString UItemSettingComponent::GetRole(ENetRole role)
 {
-	SpawnSetting();
+	switch (role)
+	{
+	case ROLE_None:
+		return "None";
+	case ROLE_SimulatedProxy:
+		return "SimulatedProxy";
+	case ROLE_AutonomousProxy:
+		return "AutonomousProxy";
+	case ROLE_Authority:
+		return "Authority";
+	case ROLE_MAX:
+		return "ROLE_MAX";
+	default:
+		return "ERROR";
+	}
+	
 }
+
+//アイテムの設定を行うメソッド
+void UItemSettingComponent::ItemSetting(int32 ItemNum)
+{
+	//アイテムのIDを設定
+	ItemNumber = ItemNum;
+
+	//UE_LOG(LogTemp, Warning, TEXT("ItemSetting"));
+
+	//出現する際の設定
+	SpawnSetting();
+
+	//アイテムを使用できる状態に変更
+	bIsItemUse = true;
+
+	//UE_LOG(LogTemp, Warning, TEXT("bIsItemUse = %d") , bIsItemUse);
+
+
+}
+
+void UItemSettingComponent::ItemSettingRunOnServer_Implementation(int32 ItemNum)
+{
+	ItemSetting(ItemNum);
+	UE_LOG(LogTemp, Warning, TEXT("ItemSettingRunOnServer"));
+
+}
+
 
 void UItemSettingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -244,9 +299,11 @@ void UItemSettingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(UItemSettingComponent, DrawIcon);
 	DOREPLIFETIME(UItemSettingComponent, ItemScale);
 	DOREPLIFETIME(UItemSettingComponent, bIsItemUse);
-	DOREPLIFETIME(UItemSettingComponent, BulletItem);
-	DOREPLIFETIME(UItemSettingComponent, SlipItem);
-	DOREPLIFETIME(UItemSettingComponent, SpeedUpItem);
+
+
+	//DOREPLIFETIME(UItemSettingComponent, BulletItem);
+	//DOREPLIFETIME(UItemSettingComponent, SlipItem);
+	//DOREPLIFETIME(UItemSettingComponent, SpeedUpItem);
 
 }
 

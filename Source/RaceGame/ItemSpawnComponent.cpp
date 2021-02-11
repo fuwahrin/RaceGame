@@ -169,17 +169,17 @@ void UItemSpawnComponent::SpawnSetting()
 		FName RowName = FName(FString::FromInt(ItemNumber));
 		FItemStructCpp* ItemStruct = ItemDataTable->FindRow<FItemStructCpp>(RowName, FString("Error"));
 
-		UE_LOG(LogTemp, Error, TEXT("ItemHasAu"));
+		//UE_LOG(LogTemp, Error, TEXT("ItemHasAu"));
 
 		//データテーブルから構造体に代入出来ていれば各アイテムの処理を行う。
 		if (ItemStruct)
 		{
-			UE_LOG(LogTemp, Error, TEXT("ItemStructSuccess"));
+			//UE_LOG(LogTemp, Error, TEXT("ItemStructSuccess"));
 			//アイテムの出現位置を設定
 			FVector ItemSpawnLocation = FVector(ItemStruct->SpawnPosX, 0.0f, 0.0f);
 			//ItemSpawnPoint->SetRelativeLocation(ItemSpawnLocation); // エラー原因ここが呼ばれない
 			SetRelativeLocation(ItemSpawnLocation);
-			UE_LOG(LogTemp, Error, TEXT("SpawnX = %f"), ItemStruct->SpawnPosX);
+			//UE_LOG(LogTemp, Error, TEXT("SpawnX = %f"), ItemStruct->SpawnPosX);
 
 			//アイテムの大きさを設定
 			ItemScale = ItemStruct->SpawnScale;

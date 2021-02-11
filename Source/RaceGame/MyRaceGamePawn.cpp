@@ -2,15 +2,14 @@
 
 
 #include "MyRaceGamePawn.h"
-#include "Blueprint/UserWidget.h"
 #include "Components/InputComponent.h"
-#include "Net/UnrealNetwork.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/SphereComponent.h"
-#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
-#include "RaceGameInstance.h"
 #include "ItemSettingComponent.h"
+#include "UIManagerComponent.h"
+#include "RaceSettingComponent.h"
 
 
 // コンストラクタ
@@ -26,8 +25,8 @@ AMyRaceGamePawn::AMyRaceGamePawn()
 	WheelColliderGroup->SetupAttachment(OwnerMesh);
 
 	//アイテム管理のコンポーネント設定
-	//ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
-	//ItemSettingComponent->ItemSpawnPoint->SetupAttachment(GetMesh());
+	ItemSettingComponent = CreateDefaultSubobject<UItemSettingComponent>(TEXT("ItemSettingComponent"));
+	ItemSettingComponent->ItemSpawnPoint->SetupAttachment(GetMesh());
 
 	float radius = 15.0f;
 	ForwardCollision = CreateDefaultSubobject<USphereComponent>(TEXT("ForwardColision"));
@@ -42,16 +41,11 @@ AMyRaceGamePawn::AMyRaceGamePawn()
 	BackwardCollision->InitSphereRadius(radius);
 	BackwardCollision->SetCollisionProfileName(TEXT("Wheel"));
 
+	//UIを管理するコンポーネント
+	UIManagerComponent = CreateDefaultSubobject<UUIManagerComponent>(TEXT("UIManagerComponent"));
 
-
-
-	//変数の初期値設定
-	GamePlayerNum = 2;
-	bisTimerStart = false;
-	bIsCheckPoint = false;
-	GameTimer = 0.0f;
-	GoalLap = 3;
-
+	//レース状態を管理するコンポーネント
+	RaceSettingComponent = CreateDefaultSubobject<URaceSettingComponent>(TEXT("RaceSettingComponent"));
 	
 }
 
@@ -60,47 +54,11 @@ void AMyRaceGamePawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//UIが設定されているなら
-	if (GameUiClass != nullptr)
-	{
-		//UIを作成
-		GameUi = CreateWidget<UUserWidget>(GetWorld(), GameUiClass);
-
-		//UIが無事に作成されたら表示する。
-		if (GameUi != nullptr)
-		{
-			GameUi->AddToViewport();
-		}
-	}
-
-	//GoalUIの作成
-	if (GoalWidgetClass != nullptr)
-	{
-		GoalWidget = CreateWidget<UUserWidget>(GetWorld(), GoalWidgetClass);
-	}
-
-	//チェックポイントを数える
-	TArray<AActor*>FindActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), CheckPointActorClass, FindActors);
-
-	//見つかった数を変数に格納する
-	CheckPointCounter = FindActors.Num();
-	UE_LOG(LogTemp, Log, TEXT("Checkpoint = %d"), CheckPointCounter);
-
 	//コライダーイベントの登録
 	ForwardCollision->OnComponentBeginOverlap.AddDynamic(this, &AMyRaceGamePawn::ForwardCollisionBeginOverlap);
 	ForwardCollision->OnComponentEndOverlap.AddDynamic(this, &AMyRaceGamePawn::ForwardCollisionEndOverlap);
 	BackwardCollision->OnComponentBeginOverlap.AddDynamic(this, &AMyRaceGamePawn::BackwardCollisionBeginOverlap);
 	BackwardCollision->OnComponentEndOverlap.AddDynamic(this, &AMyRaceGamePawn::BackwardCollisionEndOverlap);
-
-	//参加人数のカウント(GameInstanceで管理している)
-	RaceGameInstance = URaceGameInstance::GetInstance();
-
-	if (RaceGameInstance)
-	{
-		RaceGameInstance->PlayerCounter++;
-	}
-
 
 }
 
@@ -108,23 +66,6 @@ void AMyRaceGamePawn::BeginPlay()
 void AMyRaceGamePawn::Tick(float Delta)
 {
 	Super::Tick(Delta);
-
-	if (RaceGameInstance)
-	{
-		//参加人数がそろったか判定
-		if (RaceGameInstance->PlayerCounter == GamePlayerNum)
-		{
-			//時間カウントを開始していなければ
-			if (!bisTimerStart)
-			{
-				float TimeSpan = 1.0f;
-				//時間カウントを開始
-				GetWorld()->GetTimerManager().SetTimer(GameTimerCountHandler, this , &AMyRaceGamePawn::GameTimeCounter, TimeSpan, true);
-				bisTimerStart = true;
-			}
-
-		}
-	}
 }
 
 // インプット登録
@@ -165,60 +106,6 @@ void AMyRaceGamePawn::SpeedCalcFunction(float SpeedMultipication)
 	FVector NewVelocity = GetMesh()->GetForwardVector() * SpeedMultipication;
 	GetMesh()->SetPhysicsLinearVelocity(NewVelocity);
 
-}
-
-//	ゴール判定を行うメソッド
-void AMyRaceGamePawn::GoalCheck()
-{
-	//チェックポイントに到達したか
-	if (bIsCheckPoint)
-	{
-		//到達していたらラップを加算
-		LapCounter++;
-
-		//ラップ数がゴールラップ数に到達していればゴール判定
-		if (LapCounter == GoalLap)
-		{
-			GoalWidget->AddToViewport();
-			bIsGoal = true;
-			CurrentCheckPoint = 0;
-			APlayerController *PC = Cast<APlayerController>(GetController());
-			if (PC)
-			{
-				PC->bShowMouseCursor = true;
-			}
-
-		}
-		else
-		{
-			//ラップ数がゴールラップに到達していなかった場合
-			//ラップ到達チェックをOFFにする。
-			bIsCheckPoint = false;
-			
-			//チェックポイント数リセット
-			CurrentCheckPoint = 0;
-		}
-		UE_LOG(LogTemp, Log, TEXT("CurrentCheckPoint = %d"), CurrentCheckPoint);
-	}
-}
-
-//	チェックポイント通過時に呼ばれるメソッド
-void AMyRaceGamePawn::CheckPointRun()
-{
-	//通過したチェックポイントを数える
-	CurrentCheckPoint++;
-
-	//通過した数が１周に必要なチェックポイント数を上回っていたら
-	if (CurrentCheckPoint >= CheckPointCounter)
-	{
-		//１周判定を有効にする。
-		bIsCheckPoint = true;
-
-		//通過したチェックポイント数を初期化
-		CurrentCheckPoint = 0;
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("CurrentCheckPoint = %d"), CurrentCheckPoint);
 }
 
 //	プレイヤーリスポーン（救済措置）
@@ -298,21 +185,6 @@ void AMyRaceGamePawn::BackwardCollisionEndOverlap(UPrimitiveComponent* Overlappe
 
 }
 
-//ゲーム時間カウント
-void AMyRaceGamePawn::GameTimeCounter()
-{
-	//サーバのみで実行する。
-	if (this->HasAuthority())
-	{
-		//ゴールしていなければ
-		if (!bIsGoal)
-		{
-			//時間をカウント
-			GameTimer += 1.0f;
-		}
-	}
-}
-
 void AMyRaceGamePawn::ItemUseMultiCast()
 {
 	if (ItemSettingComponent != nullptr)
@@ -386,15 +258,6 @@ void AMyRaceGamePawn::AccelSetting(UPrimitiveComponent* HitComponent, bool bIsSp
 
 	//インプット値にブレーキ値の計算を加える
 	InputCalc = InputCalcMax - DownSpeedOffset;
-
-}
-
-
-void AMyRaceGamePawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AMyRaceGamePawn, GameTimer);
 
 }
 

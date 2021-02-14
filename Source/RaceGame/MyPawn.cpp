@@ -14,6 +14,8 @@
 #include "Camera/CameraComponent.h"
 #include "ItemBase.h"
 #include "RayActor.h"
+#include "RaceSettingComponent.h"
+
 
 // Sets default values
 AMyPawn::AMyPawn()
@@ -80,6 +82,10 @@ AMyPawn::AMyPawn()
 	Movement = CreateDefaultSubobject<UMyCartMoveComponent>(TEXT("Movement"));
 	//移動同期コンポーネント設定
 	MovementReplicator = CreateDefaultSubobject<UMyCartMoveComponentReplicator>(TEXT("MovementComponentReplicator"));
+
+	
+	//レース状態を管理するコンポーネント
+	RaceSettingComponent = CreateDefaultSubobject<URaceSettingComponent>(TEXT("RaceSettingComponent"));
 }
 // Called when the game starts or when spawned
 void AMyPawn::BeginPlay()
@@ -128,9 +134,6 @@ void AMyPawn::Tick(float DeltaTime)
 }
 
 
-
-
-
 // Called to bind functionality to input
 void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -139,40 +142,7 @@ void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	//キーアクション登録
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMyPawn::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMyPawn::MoveRight);
-
-	//アイテム出現ボタン
-	//ネットワークの権限を確認
-	//if (this->HasAuthority())
-	//{
-	//	//サーバー側ならマルチキャスト
-	//	PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseMultiCast);
-	//
-	//}
-	//else
-	//{
-	//	//クライアント側ならサーバで実行させる。
-	//	PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUseRunonServer);
-	//}
-
 	PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUse);
-}
-
-void AMyPawn::ItemUseMultiCast()
-{
-	//UE_LOG(LogTemp, Log, TEXT("ItemUseMultiCast(1)"));
-	if (ItemSettingComponent != nullptr)
-	{
-		//UE_LOG(LogTemp, Log, TEXT("ItemUseMultiCast(2)"));
-		ItemSettingComponent->SpawnItemMulticast();
-	}
-}
-
-void AMyPawn::ItemUseRunonServer()
-{
-	if (ItemSettingComponent != nullptr)
-	{
-		ItemSettingComponent->SpawnItemRunonServer();
-	}
 }
 
 void AMyPawn::ItemUse()
@@ -220,25 +190,33 @@ FString AMyPawn::GetEnumText(ENetRole role)
 
 float AMyPawn::RoadSpeedCalcFunction(ARayActor *rayActor)
 {
+	//スピードの計算用変数
 	float SpeedRate = 1.0f;
+
 	//道路のレイ判定を取得
 	if (rayActor->IsStateChange())
 	{
+		//道路を走っているなら
 		if (rayActor->GetRayHitState() == FName("Road"))
 		{
+			//最大速度を上回っていなければ
 			if (SpeedRate < 1.0f)
 			{
+				//スピードを上げる
 				SpeedRate += 0.3f;
 			}
 		}
 		else
 		{
+			//最小速度を下回っていれば
 			if (SpeedRate < 0.1f)
 			{
+				//速度を最小に
 				SpeedRate = 0.1f;
 			}
 			else
 			{
+				//下回っていなければ速度を下げる
 				SpeedRate -= 0.3f;
 			}
 		}

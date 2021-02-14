@@ -141,7 +141,7 @@ public:
 	FVector GetVelocity() { return Velocity; }
 
 	//スロットル
-	void SetThrottle(float value) { Throttle = value; }
+	void SetThrottle(float value);// Throttle = value; }
 
 	//ステアリング
 	void SetSteeringThrow(float value) { SteeringThrow = value; }
@@ -152,4 +152,6 @@ public:
 	//最終移動のゲッター
 	FMyPawnMove GetLastMove() { return LastMove; }
 	
+	//移動を開始したか
+	bool bIsMoveStart = false;
 };

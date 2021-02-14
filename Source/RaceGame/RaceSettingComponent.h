@@ -75,9 +75,6 @@ protected:
 		float GameTimer;
 
 	UPROPERTY()
-		class UUIManagerComponent *UIManagerComponent;
-
-	UPROPERTY()
 		class APawn *OwnerPawn;
 
 protected:

@@ -44,15 +44,18 @@ void UMyCartMoveComponentReplicator::TickComponent(float DeltaTime, ELevelTick T
 	//クライアント側で操作しているPawnの動きをサーバーに複製させる
 	if (GetOwnerRole() == ROLE_AutonomousProxy)
 	{
-	
-		//サーバーが未確認の動きを登録
-		UnacknowledgedMoves.Add(MovementComponent->LastMove);
-	
-		//未確認の動きの数を確認
-		//UE_LOG(LogTemp, Warning, TEXT("Queue length: %d"), UnacknowledgedMoves.Num());
-		//サーバに移動情報を送信
-		Server_SendMove(LastMove);
-		//UE_LOG(LogTemp, Warning, TEXT("Thottole = %f"), LastMove.Throttle);
+		if (MovementComponent->bIsMoveStart)
+		{
+
+			//サーバーが未確認の動きを登録
+			UnacknowledgedMoves.Add(MovementComponent->LastMove);
+
+			//未確認の動きの数を確認
+			//UE_LOG(LogTemp, Warning, TEXT("Queue length: %d"), UnacknowledgedMoves.Num());
+			//サーバに移動情報を送信
+			Server_SendMove(LastMove);
+			//UE_LOG(LogTemp, Warning, TEXT("Thottole = %f"), LastMove.Throttle);
+		}
 	
 	}
 
@@ -63,7 +66,11 @@ void UMyCartMoveComponentReplicator::TickComponent(float DeltaTime, ELevelTick T
 	{
 		//UE_LOG(LogTemp, Error, TEXT("Server"));
 		//サーバーの移動情報を更新する
-		UpdateServerState(LastMove);
+		if (MovementComponent->bIsMoveStart)
+		{
+
+			UpdateServerState(LastMove);
+		}
 	}
 	
 	//クライアント側で複製されているPawnなら
@@ -75,13 +82,6 @@ void UMyCartMoveComponentReplicator::TickComponent(float DeltaTime, ELevelTick T
 	}
 
 }
-
-//インプットイベント（前進）
-bool UMyCartMoveComponentReplicator::Server_SendMove_Validate(FMyPawnMove move)
-{
-	return true;
-}
-
 void UMyCartMoveComponentReplicator::Server_SendMove_Implementation(FMyPawnMove move)
 {
 	if (MovementComponent == nullptr) return;
@@ -275,7 +275,7 @@ void UMyCartMoveComponentReplicator::AutonomousProxy_OnRep_ServerState()
 	//未確認の動きのリストを更新する
 	ClearUnacknowledgedMoves(ServerState.LastMove);
 
-	//
+	//未確認の動きリストの分の動きを行う
 	for (const FMyPawnMove& Move : UnacknowledgedMoves)
 	{
 		MovementComponent->SimulateMove(Move);

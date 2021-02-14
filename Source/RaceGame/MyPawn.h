@@ -62,6 +62,11 @@ public:
 	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USceneComponent *RightRayPoint;
 
+	//レース状態を管理するコンポーネント
+	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class URaceSettingComponent* RaceSettingComponent;
+
+
 
 
 
@@ -83,12 +88,6 @@ protected:
 	FString GetEnumText(ENetRole Role);
 
 	UFUNCTION()
-	void ItemUseMultiCast();
-
-	UFUNCTION()
-	void ItemUseRunonServer();
-
-	UFUNCTION()
 	void ItemUse();
 	//道路判定
 	UFUNCTION()
@@ -108,10 +107,6 @@ protected:
 	//現在何ラップ走ったかカウントする変数
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
 		int32 LapCounter;
-
-	//UIのインスタンス
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<class UUserWidget> GameUiClass;
 
 	//UIの実数を格納する変数
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))

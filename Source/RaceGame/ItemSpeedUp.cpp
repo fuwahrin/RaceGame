@@ -10,7 +10,7 @@
 //コンストラクタ
 AItemSpeedUp::AItemSpeedUp()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	//リスポーンさせなうように設定
 	bIsItemRespawn = false;
@@ -20,9 +20,6 @@ AItemSpeedUp::AItemSpeedUp()
 	UStaticMesh* SpeedUpMesh = SpeedUpItemMeshAsset.Object;
 	ItemMesh->SetStaticMesh(SpeedUpMesh);
 	ItemMesh->SetRelativeLocation(FVector(0.0f, 0.0, 0.0f));
-
-	//同期設定
-	//SetReplicates(true);
 
 
 }

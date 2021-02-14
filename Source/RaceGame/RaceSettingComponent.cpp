@@ -4,7 +4,6 @@
 #include "RaceSettingComponent.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "RaceGameInstance.h"
-#include "UIManagerComponent.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -65,9 +64,6 @@ void URaceSettingComponent::InitSetting()
 	{
 		RaceGameInstance->PlayerCounter++;
 	}
-
-	//UIコンポーネントをこのコンポーネントの所有者から探す
-	UIManagerComponent = GetOwner()->FindComponentByClass<UUIManagerComponent>();
 }
 
 void URaceSettingComponent::RaceSettingTick()
@@ -76,7 +72,7 @@ void URaceSettingComponent::RaceSettingTick()
 	if (RaceGameInstance)
 	{
 		//参加人数がそろったか判定
-		if (RaceGameInstance->PlayerCounter == GamePlayerNum)
+		if (RaceGameInstance->PlayerCounter >= GamePlayerNum)
 		{
 			//時間カウントを開始していなければ
 			if (!bisTimerStart)
@@ -98,39 +94,36 @@ void URaceSettingComponent::RaceSettingTick()
 //	ゴール判定を行うメソッド
 void URaceSettingComponent::GoalCheck()
 {
-	if (UIManagerComponent != nullptr)
+	//チェックポイントに到達したか
+	if (bIsCheckPoint)
 	{
-		//チェックポイントに到達したか
-		if (bIsCheckPoint)
+		//到達していたらラップを加算
+		LapCounter++;
+
+		//ラップ数がゴールラップ数に到達していればゴール判定
+		if (LapCounter == GoalLap)
 		{
-			//到達していたらラップを加算
-			LapCounter++;
-
-			//ラップ数がゴールラップ数に到達していればゴール判定
-			if (LapCounter == GoalLap)
+			bIsGoal = true;
+			CurrentCheckPoint = 0;
+			APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
+			if (PC)
 			{
-				UIManagerComponent->ShowGoalWidget();
-				bIsGoal = true;
-				CurrentCheckPoint = 0;
-				APlayerController* PC = Cast<APlayerController>(GetOwner()->GetInstigatorController());
-				if (PC)
-				{
-					PC->bShowMouseCursor = true;
-				}
-
+				PC->bShowMouseCursor = true;
 			}
-			else
-			{
-				//ラップ数がゴールラップに到達していなかった場合
-				//ラップ到達チェックをOFFにする。
-				bIsCheckPoint = false;
 
-				//チェックポイント数リセット
-				CurrentCheckPoint = 0;
-			}
-			//UE_LOG(LogTemp, Log, TEXT("CurrentCheckPoint = %d"), CurrentCheckPoint);
 		}
+		else
+		{
+			//ラップ数がゴールラップに到達していなかった場合
+			//ラップ到達チェックをOFFにする。
+			bIsCheckPoint = false;
+
+			//チェックポイント数リセット
+			CurrentCheckPoint = 0;
+		}
+		//UE_LOG(LogTemp, Log, TEXT("CurrentCheckPoint = %d"), CurrentCheckPoint);
 	}
+	
 }
 
 //	チェックポイント通過時に呼ばれるメソッド
@@ -164,13 +157,3 @@ void URaceSettingComponent::GameTimeCounter()
 	}
 	
 }
-
-
-//void URaceSettingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-//{
-//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-//
-//	DOREPLIFETIME(URaceSettingComponent, GameTimer);
-//
-//}
-

@@ -8,7 +8,6 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Components/SphereComponent.h"
 #include "ItemSettingComponent.h"
-#include "UIManagerComponent.h"
 #include "RaceSettingComponent.h"
 
 
@@ -41,9 +40,7 @@ AMyRaceGamePawn::AMyRaceGamePawn()
 	BackwardCollision->InitSphereRadius(radius);
 	BackwardCollision->SetCollisionProfileName(TEXT("Wheel"));
 
-	//UIを管理するコンポーネント
-	UIManagerComponent = CreateDefaultSubobject<UUIManagerComponent>(TEXT("UIManagerComponent"));
-
+	
 	//レース状態を管理するコンポーネント
 	RaceSettingComponent = CreateDefaultSubobject<URaceSettingComponent>(TEXT("RaceSettingComponent"));
 	
@@ -74,18 +71,8 @@ void AMyRaceGamePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	//アイテム出現ボタン
-	//ネットワークの権限を確認
-	if (this->HasAuthority())
-	{
-		//サーバー側ならマルチキャスト
-		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyRaceGamePawn::ItemUseMultiCast);
-		
-	}
-	else
-	{
-		//クライアント側ならサーバで実行させる。
-		PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyRaceGamePawn::ItemUseRunonServer);
-	}
+	
+	PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyRaceGamePawn::ItemUse);
 
 	//リスポーン
 	PlayerInputComponent->BindAction("PlayerRespawn", IE_Pressed, this, &AMyRaceGamePawn::Reapawn);
@@ -185,20 +172,9 @@ void AMyRaceGamePawn::BackwardCollisionEndOverlap(UPrimitiveComponent* Overlappe
 
 }
 
-void AMyRaceGamePawn::ItemUseMultiCast()
+void AMyRaceGamePawn::ItemUse()
 {
-	if (ItemSettingComponent != nullptr)
-	{
-		ItemSettingComponent->SpawnItemMulticast();
-	}
-}
-
-void AMyRaceGamePawn::ItemUseRunonServer()
-{
-	if (ItemSettingComponent != nullptr)
-	{
-		ItemSettingComponent->SpawnItemRunonServer();
-	}
+	ItemSettingComponent->SpawnItem();
 }
 
 
@@ -214,7 +190,6 @@ void AMyRaceGamePawn::CrashEvent()
 	InputCalc = 0.0f;
 
 	//アイテムを使用できないようにする、
-	//bIsItemUse = false;
 	ItemSettingComponent->SetItemUse(true);
 
 
@@ -228,7 +203,6 @@ void AMyRaceGamePawn::CrashEvent()
 void AMyRaceGamePawn::InputReset()
 {
 	InputCalc = 1.0f;
-	//bIsItemUse = true;
 	ItemSettingComponent->SetItemUse(true);
 }
 

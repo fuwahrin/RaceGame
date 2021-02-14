@@ -47,10 +47,6 @@ protected:
 	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class UItemSettingComponent* ItemSettingComponent;
 
-	//UWGを管理するコンポーネント
-	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		class UUIManagerComponent* UIManagerComponent;
-
 	//レース状態を管理するコンポーネント
 	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class URaceSettingComponent* RaceSettingComponent;
@@ -99,7 +95,7 @@ public:
 	UFUNCTION()
 		void Reapawn();
 
-	UFUNCTION(Server, unreliable)
+	UFUNCTION(Server , Reliable)
 		void RespawnRunonServer();
 
 	//タイトルに戻る
@@ -111,12 +107,8 @@ public:
 	UFUNCTION()
 		void GameEnd();
 
-
 	UFUNCTION()
-		void ItemUseMultiCast();
-
-	UFUNCTION()
-		void ItemUseRunonServer();
+		void ItemUse();
 
 
 

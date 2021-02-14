@@ -26,21 +26,33 @@ void ARayActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	RayTrace();
+	RayTrace(false);
 
 }
 
-void ARayActor::RayTrace()
+void ARayActor::RayTrace(bool bIsDebugDraw)
 {
 	if (RootComponent != nullptr)
 	{
+		//レイの始点と終点の設定
 		FVector StartPoint = RootComponent->GetComponentLocation();
 		FVector EndPoint = StartPoint - FVector(0.0f, 0.0f, 50.0f);
 
 		FHitResult hit;
+
+		//あたり判定のパラメータ
 		FCollisionQueryParams query;
+
+		//自身に当たらない用にする。
 		query.AddIgnoredActor(this);
-		DrawDebugLine(GetWorld(), StartPoint, EndPoint, FColor::Red, false, 1.0f, 0, 1);
+
+		//デバッグ描画
+		if (bIsDebugDraw)
+		{
+			DrawDebugLine(GetWorld(), StartPoint, EndPoint, FColor::Red, false, 1.0f, 0, 1);
+		}
+
+		//レイトレース
 		if (GetWorld()->LineTraceSingleByChannel(hit, StartPoint, EndPoint, ECC_Visibility, query))
 		{
 			if (IsValid(hit.GetActor()))

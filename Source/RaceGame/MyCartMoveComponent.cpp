@@ -203,6 +203,18 @@ void UMyCartMoveComponent::CrashEvent()
 	SpeedCalcTimeEvent(1.0f, 1.0f);
 }
 
+void UMyCartMoveComponent::SetThrottle(float value)
+{
+	
+	if (!bIsMoveStart && value != 0.0f)
+	{
+		//移動の同期フラグがOFFなら動き始めた際にＯＮにする
+		//※Exeファイル実行時にクライアント側のPawnがDestroyされてしまう防止
+		bIsMoveStart = true;
+	}
+	Throttle = value;
+	//UE_LOG(LogTemp, Warning, TEXT("Throttle = %f"), Throttle);
+}
 
 
 

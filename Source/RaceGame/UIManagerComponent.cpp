@@ -4,6 +4,8 @@
 #include "UIManagerComponent.h"
 #include "Blueprint/UserWidget.h"
 
+////
+////ネットワーク同期時にWidgetの所有権周りで間違っていたのでパッケージファイルには使用していない。
 
 // Sets default values for this component's properties
 UUIManagerComponent::UUIManagerComponent()

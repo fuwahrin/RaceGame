@@ -29,7 +29,7 @@ protected:
 
 
 	UFUNCTION(BlueprintCallable)
-	void RayTrace();
+	void RayTrace(bool bIsDebugDraw);
 
 public:
 	UFUNCTION(BlueprintCallable)

@@ -39,8 +39,6 @@ AItemBase::AItemBase()
 	//•Ï”‚Ì‰Šúİ’è
 	bIsItemRespawn = true;
 
-	//SelectItemNumber = 0;
-
 }
 
 // Called when the game starts or when spawned

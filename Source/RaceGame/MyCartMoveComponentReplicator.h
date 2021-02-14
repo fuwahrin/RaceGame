@@ -79,7 +79,7 @@ private:
 	FMyPawnState ServerState;
 
 	//ˆÚ“®ˆ—ƒƒ\ƒbƒh
-	UFUNCTION(Server, Reliable, WithValidation)
+	UFUNCTION(Server, Reliable)
 	void Server_SendMove(FMyPawnMove move);
 
 	UFUNCTION()

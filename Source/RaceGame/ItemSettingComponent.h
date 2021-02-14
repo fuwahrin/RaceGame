@@ -52,41 +52,40 @@ protected:
 	APawn *OwnerPawn;
 
 	//アイテムのID
-	UPROPERTY(/*Replicated ,*/VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	int32 ItemNumber;
 
 	//アイテムが使用できる状態か確認する変数
-	UPROPERTY(/*Replicated ,*/ EditDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	bool bIsItemUse;
 
 	//スポーンさせる際のScale
-	UPROPERTY(/*Replicated ,*/ VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	float ItemScale;
 
 	//Spanwさせるアイテム
-	UPROPERTY(/*Replicated ,*/ VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<class AActor> ItemClass;
 
 
 	//アイテムの画像
-	UPROPERTY(/*Replicated ,*/ VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		class UTexture2D* DrawIcon;
 
 	//アイテムの種類
-	UPROPERTY(/*Replicated ,*/ EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AActor> BulletItem;
 
-	UPROPERTY(/*Replicated ,*/ EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AActor> SlipItem;
 
-	UPROPERTY(/*Replicated ,*/ EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AActor> SpeedUpItem;
 
 	//データテーブル
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DataTable")
 		class UDataTable* ItemDataTable;
 
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DataTable")
 	class UMyCartMoveComponentReplicator *MoveReplicateComponent;
 
 	//サーバーの状態
@@ -116,23 +115,11 @@ protected:
 	UFUNCTION()
 		void ItemSetting(int32 ItemNum);
 
-	UFUNCTION(Server, reliable)
-		void ItemSettingRunOnServer(int32 ItemNum);
-
+	
 	UFUNCTION()
 		void SpawnSetting();
-	UFUNCTION(Server, reliable)
-		void SpawnSettingRunOnServer();
-
-public:
-
-	//アイテムを出現させるメソッド
-	UFUNCTION(NetMulticast, reliable)
-	void SpawnItemMulticast();
 	
-	UFUNCTION(Server, reliable)
-	void SpawnItemRunonServer();
-
+public:
 	UFUNCTION()
 	void SpawnItem();
 

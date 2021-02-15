@@ -26,22 +26,16 @@ class RACEGAME_API UItemSettingComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+public:
+
+	//---コンポーネント
+	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		class USceneComponent* ItemSpawnPoint;
+
+
 public:	
 	// Sets default values for this component's properties
 	UItemSettingComponent();
-
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-public:
-
-	//コンポーネント
-	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class USceneComponent* ItemSpawnPoint;
 
 private:
 	//----変数
@@ -53,15 +47,15 @@ protected:
 
 	//アイテムのID
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-	int32 ItemNumber;
+		int32 ItemNumber;
 
 	//アイテムが使用できる状態か確認する変数
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-	bool bIsItemUse;
+		bool bIsItemUse;
 
 	//スポーンさせる際のScale
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-	float ItemScale;
+		float ItemScale;
 
 	//Spanwさせるアイテム
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
@@ -86,25 +80,23 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "DataTable")
 		class UDataTable* ItemDataTable;
 
-	class UMyCartMoveComponentReplicator *MoveReplicateComponent;
-
 	//サーバーの状態
 	UPROPERTY(Replicated)
-	FItemState ServerItemState;
+		FItemState ServerItemState;
 
 	FItemState LocalItemState;
 
-	UFUNCTION(Server, Reliable, WithValidation)
-    void Server_SendItemSpawn(int itemnum);
-
-	UFUNCTION()
-	void ItemCreate(int32 ItemNum);
 
 
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
 
+public:	
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-
-
+	
 protected:
 	//----関数
 	//アイテムを使用したときのメソッド
@@ -132,8 +124,15 @@ public:
 	UFUNCTION()
 		void SetItemUse(bool value) { bIsItemUse = value; }
 
+	UFUNCTION(Server, Reliable, WithValidation)
+		void Server_SendItemSpawn(int itemnum);
+
+	UFUNCTION()
+		void ItemCreate(int32 ItemNum);
+
 	UFUNCTION()
 		FString GetRole(ENetRole role);
+
 	
 
 	

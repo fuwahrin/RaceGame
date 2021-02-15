@@ -12,18 +12,6 @@ class RACEGAME_API URaceSettingComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
-	// Sets default values for this component's properties
-	URaceSettingComponent();
-
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 protected:
 	//----変数
 		//ゴールに必要なラップ数
@@ -77,14 +65,32 @@ protected:
 	UPROPERTY()
 		class APawn *OwnerPawn;
 
+
+public:	
+	// Sets default values for this component's properties
+	URaceSettingComponent();
+
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
+
+public:	
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+public:
+	//コンポーネントの初期設定
+	UFUNCTION()
+		void InitSetting();
+
+	//コンポーネントのTick
+	UFUNCTION()
+		void RaceSettingTick();
+
 protected:
 	//---関数
 
-	
-	//　同期するプロパティ
-	//virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	//ゴール判定の処理
+	//	ゴール判定を行うメソッド
 	UFUNCTION(BlueprintCallable)
 		void GoalCheck();
 
@@ -95,16 +101,6 @@ protected:
 	//ゲーム時間カウント
 	UFUNCTION()
 		void GameTimeCounter();
-
-public:
-	UFUNCTION()
-		void InitSetting();
-
-	UFUNCTION()
-		void RaceSettingTick();
-
-	
-
 
 
 

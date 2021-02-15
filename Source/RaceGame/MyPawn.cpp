@@ -133,7 +133,6 @@ void AMyPawn::Tick(float DeltaTime)
 
 }
 
-
 // Called to bind functionality to input
 void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -145,6 +144,24 @@ void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyPawn::ItemUse);
 }
 
+//前進・後退
+void AMyPawn::MoveForward(float value)
+{
+	if (Movement == nullptr) return;
+
+	Movement->SetThrottle(value);
+}
+
+//左右
+void AMyPawn::MoveRight(float value)
+{
+	if (Movement == nullptr) return;
+
+	Movement->SetSteeringThrow(value);
+}
+
+
+//アイテムを仕様完了状態にするメソッド
 void AMyPawn::ItemUse()
 {
 	if (ItemSettingComponent != nullptr)
@@ -153,41 +170,7 @@ void AMyPawn::ItemUse()
 	}
 }
 
-void AMyPawn::MoveForward(float value)
-{
-	if (Movement == nullptr) return;
-
-	Movement->SetThrottle(value);
-}
-
-void AMyPawn::MoveRight(float value)
-{
-	if (Movement == nullptr) return;
-
-	Movement->SetSteeringThrow(value);
-}
-
-FString AMyPawn::GetEnumText(ENetRole role)
-{
-	switch (role)
-	{
-	case ROLE_None:
-		return "None";
-	case ROLE_SimulatedProxy:
-		return "SimulatedProxy";
-	case ROLE_AutonomousProxy:
-		return "AutonomousProxy";
-	case ROLE_Authority:
-		return "Authority";
-	case ROLE_MAX:
-		return "ROLE_MAX";
-	default:
-		return "ERROR";
-	}
-}
-
-
-
+//道路の速度値を取得するメソッド
 float AMyPawn::RoadSpeedCalcFunction(ARayActor *rayActor)
 {
 	//スピードの計算用変数
@@ -225,6 +208,8 @@ float AMyPawn::RoadSpeedCalcFunction(ARayActor *rayActor)
 	return SpeedRate;
 }
 
+
+//レイトレースのアクターを出現させる。
 ARayActor* AMyPawn::SpawnRayActor(USceneComponent * parent)
 {
 	ARayActor* SpawnActor;
@@ -240,5 +225,25 @@ ARayActor* AMyPawn::SpawnRayActor(USceneComponent * parent)
 	SpawnActor->AttachToComponent(parent , { EAttachmentRule::KeepRelative , true });
 
 	return SpawnActor;
+}
+
+
+FString AMyPawn::GetEnumText(ENetRole role)
+{
+	switch (role)
+	{
+	case ROLE_None:
+		return "None";
+	case ROLE_SimulatedProxy:
+		return "SimulatedProxy";
+	case ROLE_AutonomousProxy:
+		return "AutonomousProxy";
+	case ROLE_Authority:
+		return "Authority";
+	case ROLE_MAX:
+		return "ROLE_MAX";
+	default:
+		return "ERROR";
+	}
 }
 

@@ -42,11 +42,6 @@ void UItemSettingComponent::BeginPlay()
 	//所有者のPawnを取得
 	OwnerPawn = GetOwner()->GetInstigator<APawn>();
 
-	MoveReplicateComponent = GetOwner()->FindComponentByClass<UMyCartMoveComponentReplicator>();
-
-
-	
-	
 }
 
 
@@ -60,7 +55,6 @@ void UItemSettingComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	if (ServerItemState.IsUse)
 	{
 		if(GetOwner()->GetRemoteRole() == ROLE_Authority)
-		//if(GetOwnerRole() == ROLE_Authority)
 		{
 			Server_SendItemSpawn(ServerItemState.ItemNum);
 			UE_LOG(LogTemp, Warning, TEXT("%s:ItemUse:%d"), *GetRole(GetOwnerRole()) , ServerItemState.ItemNum);
@@ -72,6 +66,51 @@ void UItemSettingComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	
 }
 
+// アイテムを使用するメソッド
+void UItemSettingComponent::ItemUse()
+{
+	//アイテムを使用したことを設定
+
+	//UIの画像を消す。
+	DrawIcon = nullptr;
+
+
+	//アイテム使用出来ない状態に変更
+	LocalItemState.IsUse = false;
+
+	//アイテムIDを初期化
+	LocalItemState.ItemNum = 0;
+
+}
+
+//アイテムの設定を行うメソッド
+void UItemSettingComponent::ItemSetting(int32 ItemNum)
+{
+	//ローカルのステータス変数のID
+	LocalItemState.ItemNum = ItemNum;
+
+	//アイテム使用可能に
+	LocalItemState.IsUse = true;
+
+	//UE_LOG(LogTemp, Warning, TEXT("%s:Itemnum = %d"), *GetRole(GetOwnerRole()), LocalItemState.ItemNum);
+
+	//アイテム出現の設定を行う。
+	SpawnSetting();
+
+}
+
+
+//	アイテムを出現させるメソッド
+void UItemSettingComponent::SpawnSetting()
+{
+
+	//アイテムNoを設定
+	int itemnum = LocalItemState.ItemNum;
+	ItemCreate(itemnum);
+
+}
+
+
 // アイテムを出現させるメソッド
 void UItemSettingComponent::SpawnItem()
 {
@@ -81,13 +120,11 @@ void UItemSettingComponent::SpawnItem()
 		//アイテムが使用できる状態か確認
 		if(LocalItemState.IsUse)
 		{
-			
 			ServerItemState = LocalItemState;
 			//アイテムをSpawnさせる
 			UWorld* const World = GetWorld();
 			if (World)
 			{
-				
 				//スポーンさせる為のパラメータ
 				FActorSpawnParameters SpawnParams;
 
@@ -98,8 +135,6 @@ void UItemSettingComponent::SpawnItem()
 				FVector SpawnLocation = ItemSpawnPoint->GetComponentLocation();
 				FRotator SpawnRotation = ItemSpawnPoint->GetComponentRotation();
 
-
-
 				//スポーンする際のScale
 				FVector SpawnScale = FVector(ItemScale);
 
@@ -108,7 +143,7 @@ void UItemSettingComponent::SpawnItem()
 				{
 					AActor* const SpawnItem = World->SpawnActor<AActor>(ItemClass, SpawnLocation, SpawnRotation, SpawnParams);
 					SpawnItem->SetActorScale3D(SpawnScale);
-					UE_LOG(LogTemp, Warning, TEXT("Server"));
+					//UE_LOG(LogTemp, Warning, TEXT("Server"));
 					
 				}
 
@@ -119,11 +154,10 @@ void UItemSettingComponent::SpawnItem()
 					SpawnItem->SetActorScale3D(SpawnScale);
 					//UE_LOG(LogTemp, Warning, TEXT("Cliant"));
 				}
-				
-
 				//UE_LOG(LogTemp, Warning, TEXT("SpawnLocation%f%f%f"), SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
 				//UE_LOG(LogTemp, Warning, TEXT("ItemSpawnPoint%f%f%f"), ItemSpawnPoint->GetRelativeLocation().X, ItemSpawnPoint->GetRelativeLocation().Y, ItemSpawnPoint->GetRelativeLocation().Z);
 
+				//アイテムを使用
 				ItemUse();
 
 			}
@@ -131,17 +165,22 @@ void UItemSettingComponent::SpawnItem()
 	}
 }
 
+//	アイテム取得メソッド
+void UItemSettingComponent::ItemPickup(int ItemNum)
+{
+	ItemSetting(ItemNum);
+}
+
+
 
 void UItemSettingComponent::Server_SendItemSpawn_Implementation(int itemnum)
 {
-	
+	//アイテム生成
 	ItemCreate(itemnum);
 
 	FActorSpawnParameters SpawnParams;
-
 	//オーナー
 	SpawnParams.Owner = this->GetOwner();
-
 
 	//スポーン位置の設定(ItemSpawnPointのワールド座標を格納)
 	FVector SpawnLocation = ItemSpawnPoint->GetComponentLocation();
@@ -211,60 +250,6 @@ void UItemSettingComponent::ItemCreate(int32 ItemNum)
 }
 
 
-
-// アイテムを使用するメソッド
-void UItemSettingComponent::ItemUse()
-{
-	//アイテムを使用したことを設定
-
-	//UIの画像を消す。
-	DrawIcon = nullptr;
-
-	
-	//アイテム使用出来ない状態に変更
-	LocalItemState.IsUse = false;
-
-	//アイテムIDを初期化
-	LocalItemState.ItemNum = 0;
-	
-}
-
-
-
-//	アイテムを出現させるメソッド
-void UItemSettingComponent::SpawnSetting()
-{
-
-	//アイテムNoを
-	int itemnum = LocalItemState.ItemNum;
-	ItemCreate(itemnum);
-
-}
-
-
-//	アイテム取得メソッド
-void UItemSettingComponent::ItemPickup(int ItemNum)
-{
-	ItemSetting(ItemNum);
-}
-
-
-//アイテムの設定を行うメソッド
-void UItemSettingComponent::ItemSetting(int32 ItemNum)
-{
-	//ローカルのステータス変数のID
-	LocalItemState.ItemNum = ItemNum;
-
-	//アイテム使用可能に
-	LocalItemState.IsUse = true;
-
-
-	//UE_LOG(LogTemp, Warning, TEXT("%s:Itemnum = %d"), *GetRole(GetOwnerRole()), LocalItemState.ItemNum);
-
-	//アイテム出現の設定を行う。
-	SpawnSetting();
-
-}
 
 void UItemSettingComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

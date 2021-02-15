@@ -16,6 +16,11 @@ class RACEGAME_API AItemBullet : public AItemBase
 	GENERATED_BODY()
 	
 protected:
+	//--------コンポーネント
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
+		class UProjectileMovementComponent* BulletMovement;
+
+protected:
 	//コンストラクタ
 	AItemBullet();
 
@@ -26,10 +31,6 @@ protected:
 	virtual void ItemHit(AMyPawn* HitPawn) override;
 
 
-protected:
-	//--------コンポーネント
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
-		class UProjectileMovementComponent* BulletMovement;
 
 
 

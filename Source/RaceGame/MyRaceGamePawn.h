@@ -26,9 +26,6 @@ class RACEGAME_API AMyRaceGamePawn : public ARaceGamePawn
 
 protected:
 
-	// アクセル値から減算する変数
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-	float DownSpeedOffset;
 
 	//==========================コンポーネント
 
@@ -50,6 +47,10 @@ protected:
 	//レース状態を管理するコンポーネント
 	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class URaceSettingComponent* RaceSettingComponent;
+
+	// アクセル値から減算する変数
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
+		float DownSpeedOffset;
 
 
 protected:
@@ -73,42 +74,9 @@ protected:
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 
 	
-	//inputcalc変数のセッター
+	//入力値のリセット
 	UFUNCTION()
 		void InputReset();
-public:
-	//クラッシュイベント
-	UFUNCTION()
-		void CrashEvent();
-
-	//スピードを調整するイベント
-	UFUNCTION()
-		void SpeedCalcFunction(float SpeedMultipication);
-
-	//アクセルに掛ける乗算値を設定するメソッド
-	UFUNCTION()
-		void AccelSetting(UPrimitiveComponent* HitComponent , bool bIsSpeedDown);
-
-
-
-	//リスポーン処理（転倒時の救済）
-	UFUNCTION()
-		void Reapawn();
-
-	UFUNCTION(Server , Reliable)
-		void RespawnRunonServer();
-
-	//タイトルに戻る
-	UFUNCTION()
-		void MoveTitle();
-
-	
-	//ゲーム終了
-	UFUNCTION()
-		void GameEnd();
-
-	UFUNCTION()
-		void ItemUse();
 
 
 
@@ -142,5 +110,33 @@ public:
 			AActor* OtherActor,
 			UPrimitiveComponent* OtherComp,
 			int32 OtherBodyIndex);
+
+public:
+	//クラッシュイベント
+	UFUNCTION()
+		void CrashEvent();
+
+	//スピードを調整するイベント
+	UFUNCTION()
+		void SpeedCalcFunction(float SpeedMultipication);
+
+	//アクセルに掛ける乗算値を設定するメソッド
+	UFUNCTION()
+		void AccelSetting(UPrimitiveComponent* HitComponent , bool bIsSpeedDown);
+
+
+
+	//リスポーン処理（転倒時の救済）
+	UFUNCTION()
+		void Respawn();
+
+	UFUNCTION(Server , Reliable)
+		void RespawnRunonServer();
+
+	UFUNCTION()
+		void ItemUse();
+
+
+	
 	
 };

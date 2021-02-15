@@ -89,10 +89,29 @@ void UMyCartMoveComponentReplicator::Server_SendMove_Implementation(FMyPawnMove 
 	MovementComponent->SimulateMove(move);
 
 	UpdateServerState(move);
+}
 
+
+void UMyCartMoveComponentReplicator::OnRep_ServerState()
+{
+	//付与された権限によって処理を変える
+	switch (GetOwnerRole())
+	{
+	case ROLE_AutonomousProxy:
+		//サーバー側
+		AutonomousProxy_OnRep_ServerState();
+		break;
+
+	case ROLE_SimulatedProxy:
+		//クライアント側
+		SimulatedProxy_OnRep_ServerState();
+		break;
+
+	}
 
 }
 
+//サーバーの移動状態を更新する
 void UMyCartMoveComponentReplicator::UpdateServerState(const FMyPawnMove& move)
 {
 	//同期用の変数に現在の移動やベクトル情報を格納する。
@@ -102,6 +121,7 @@ void UMyCartMoveComponentReplicator::UpdateServerState(const FMyPawnMove& move)
 
 }
 
+//クライアント側のTick
 void UMyCartMoveComponentReplicator::CliantTick(float DeltaTime)
 {
 	//クライアント側で毎フレーム行われる処理
@@ -127,6 +147,66 @@ void UMyCartMoveComponentReplicator::CliantTick(float DeltaTime)
 	InterpolateRotation(LerpAlpha);
 }
 
+//権限がサーバ側だったときの同期処理
+void UMyCartMoveComponentReplicator::AutonomousProxy_OnRep_ServerState()
+{
+	//UE_LOG(LogTemp, Warning, TEXT("ReplicatedLocation"));
+
+	if (MovementComponent == nullptr) return;
+
+	GetOwner()->SetActorTransform(ServerState.Transform);
+	MovementComponent->SetVelocity(ServerState.Velocity);
+
+	//未確認の動きのリストを更新する
+	ClearUnacknowledgedMoves(ServerState.LastMove);
+
+	//未確認の動きリストの分の動きを行う
+	for (const FMyPawnMove& Move : UnacknowledgedMoves)
+	{
+		MovementComponent->SimulateMove(Move);
+	}
+}
+
+
+//権限がクライアント側だったときの同期処理
+void UMyCartMoveComponentReplicator::SimulatedProxy_OnRep_ServerState()
+{
+	if (MovementComponent == nullptr) return;
+
+	//更新時間を格納
+	CliantTimeBetweenLastUpdate = CliantTimeSinceUpdate;
+
+	//更新カウンターをリセット
+	CliantTimeSinceUpdate = 0;
+
+	//移動開始位置を格納
+	if (MeshOffsetRoot != nullptr)
+	{
+		//コライダーの位置から取得
+		CliantStartTransform.SetLocation(MeshOffsetRoot->GetComponentLocation());
+		CliantStartTransform.SetRotation(MeshOffsetRoot->GetComponentQuat());
+	}
+
+	//移動速度を格納
+	CliantStartVelocity = MovementComponent->GetVelocity();
+
+	//所有者の位置を変更
+	GetOwner()->SetActorTransform(ServerState.Transform);
+
+}
+
+// キュービック補間位置を算出
+void UMyCartMoveComponentReplicator::InterpoteLocation(const FHermiteCubicSpline& Spline, float LerpAlpha)
+{
+
+	FVector NewLocation = Spline.InterpolateLocation(LerpAlpha);
+	if (MeshOffsetRoot != nullptr)
+	{
+		MeshOffsetRoot->SetWorldLocation(NewLocation);
+	}
+}
+
+//キュービック補間の角度を算出する。
 void UMyCartMoveComponentReplicator::InterpolateRotation(float LerpAlpha)
 {
 	//角度計算
@@ -143,22 +223,7 @@ void UMyCartMoveComponentReplicator::InterpolateRotation(float LerpAlpha)
 	}
 }
 
-float UMyCartMoveComponentReplicator::VelocityToDerivarite()
-{
-	return  CliantTimeBetweenLastUpdate * 100;
-}
-
-//キュービック補間位置を算出
-void UMyCartMoveComponentReplicator::InterpoteLocation(const FHermiteCubicSpline& Spline, float LerpAlpha)
-{
-
-	FVector NewLocation = Spline.InterpolateLocation(LerpAlpha);
-	if (MeshOffsetRoot != nullptr)
-	{
-		MeshOffsetRoot->SetWorldLocation(NewLocation);
-	}
-}
-
+//キュービック補間速度を算出する。
 void UMyCartMoveComponentReplicator::InterpolateVelocity(const FHermiteCubicSpline& Spline, float LerpAlpha)
 {
 	FVector NewDerivaive = Spline.InterpolateDeriative(LerpAlpha);
@@ -167,6 +232,14 @@ void UMyCartMoveComponentReplicator::InterpolateVelocity(const FHermiteCubicSpli
 }
 
 
+
+float UMyCartMoveComponentReplicator::VelocityToDerivarite()
+{
+	return  CliantTimeBetweenLastUpdate * 100;
+}
+
+
+//キュービック補間のスプラインを作成するメソッド
 FHermiteCubicSpline UMyCartMoveComponentReplicator::CreateSpline()
 {
 
@@ -188,7 +261,7 @@ FHermiteCubicSpline UMyCartMoveComponentReplicator::CreateSpline()
 }
 
 
-
+//未確認の移動を削除するメソッド
 void UMyCartMoveComponentReplicator::ClearUnacknowledgedMoves(FMyPawnMove LastMove)
 {
 	TArray<FMyPawnMove> newMove;
@@ -207,80 +280,12 @@ void UMyCartMoveComponentReplicator::ClearUnacknowledgedMoves(FMyPawnMove LastMo
 	UnacknowledgedMoves = newMove;
 }
 
-
-
-void UMyCartMoveComponentReplicator::OnRep_ServerState()
-{
-	//付与された権限によって処理を変える
-	switch (GetOwnerRole())
-	{
-		case ROLE_AutonomousProxy:
-			//サーバー側
-			AutonomousProxy_OnRep_ServerState();
-			break;
-
-		case ROLE_SimulatedProxy:
-			//クライアント側
-			SimulatedProxy_OnRep_ServerState();
-			break;
-
-	}
-	
-}
-
+//シミュレーション移動先を取得
 FVector UMyCartMoveComponentReplicator::GetSimulateLocation()
 {
 	return MeshOffsetRoot->GetComponentLocation();
 }
 
-void UMyCartMoveComponentReplicator::SimulatedProxy_OnRep_ServerState()
-{
-	if (MovementComponent == nullptr) return;
-
-	//更新時間を格納
-	CliantTimeBetweenLastUpdate = CliantTimeSinceUpdate;
-
-	//更新カウンターをリセット
-	CliantTimeSinceUpdate = 0;
-
-	//移動開始位置を格納
-	if (MeshOffsetRoot != nullptr)
-	{
-		//コライダーの位置から取得
-		CliantStartTransform.SetLocation(MeshOffsetRoot->GetComponentLocation());
-		CliantStartTransform.SetRotation(MeshOffsetRoot->GetComponentQuat());
-	}
-	
-	//移動速度を格納
-	CliantStartVelocity = MovementComponent->GetVelocity();
-
-	//所有者の位置を変更
-	GetOwner()->SetActorTransform(ServerState.Transform);
-
-	
-
-
-}
-
-//権限がサーバ側だったときの同期処理
-void UMyCartMoveComponentReplicator::AutonomousProxy_OnRep_ServerState()
-{
-	//UE_LOG(LogTemp, Warning, TEXT("ReplicatedLocation"));
-
-	if (MovementComponent == nullptr) return;
-
-	GetOwner()->SetActorTransform(ServerState.Transform);
-	MovementComponent->SetVelocity(ServerState.Velocity);
-
-	//未確認の動きのリストを更新する
-	ClearUnacknowledgedMoves(ServerState.LastMove);
-
-	//未確認の動きリストの分の動きを行う
-	for (const FMyPawnMove& Move : UnacknowledgedMoves)
-	{
-		MovementComponent->SimulateMove(Move);
-	}
-}
 
 void UMyCartMoveComponentReplicator::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {

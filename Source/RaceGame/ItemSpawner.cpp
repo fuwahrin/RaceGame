@@ -25,10 +25,6 @@ AItemSpawner::AItemSpawner()
 	DummyItemMesh->SetRelativeLocation(FVector(0.0f, 0.0f, -50.0f));
 	DummyItemMesh->SetupAttachment(Arrow);
 	
-
-
-
-	
 	//•Ï”‚Ì‰Šú’lİ’è
 	ItemSpawnNum = 4;
 	ItemMeshSize = 100;

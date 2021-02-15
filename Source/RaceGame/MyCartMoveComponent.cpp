@@ -50,31 +50,75 @@ void UMyCartMoveComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	}
 }
 
-//移動作成
-FMyPawnMove UMyCartMoveComponent::CreateMove(float DeltaTime)
+//スピードアップ値の調整
+void UMyCartMoveComponent::SpeedCalc(float Rate)
 {
-	//カーブ時の減速値設定
-	if (SteeringThrow != 0.0f)
-	{
-		SteeringRate = 0.5f;
-	}
-	else
-	{
-		SteeringRate = 1.0f;
-	}
-
-	//UE_LOG(LogTemp, Error, TEXT("SteeringRate = %f"), SteeringRate);
-	FMyPawnMove Move;
-	Move.DeltaTime = DeltaTime;
-	Move.SteeringThrow = SteeringThrow;
-	Move.Throttle = (Throttle * (SpeedUpRate * RoadSpeedRate) * SteeringRate );
-	Move.Time = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
-
-	return Move;
+	//スロットルに与える乗算値を変更
+	SpeedUpRate = Rate;
 
 }
 
+//速度調整のタイムイベント関数
+void UMyCartMoveComponent::SpeedCalcTimeEvent(float Rate, float CallTime)
+{
+	//イベント用のハンドラーとデリゲート変数を宣言
+	FTimerHandle SpeedHandler;
+	FTimerDelegate SpeedDelegate;
 
+	//速度調整の関数を登録
+	SpeedDelegate.BindUFunction(this, FName(TEXT("SpeedCalc")), Rate);
+
+	//UE_LOG(LogTemp, Warning, TEXT("RateInput = %f"), Rate);
+
+	//イベント登録した関数を呼ぶ
+	GetWorld()->GetTimerManager().SetTimer(SpeedHandler, SpeedDelegate, CallTime, false);
+}
+
+void UMyCartMoveComponent::SpeedUpEvent()
+{
+	float MaxSpeedRate = 10.0f;
+	float CallTime = 0.1f;
+	float Default = 1.0f;
+
+	//TODO:マジックNO修正
+	SpeedCalcTimeEvent(MaxSpeedRate, CallTime);
+	SpeedCalcTimeEvent(Default, Default);
+}
+
+
+//クラッシュイベント
+void UMyCartMoveComponent::CrashEvent()
+{
+	float CrashRate = 0.0f;
+	float CallTime = 0.1f;
+	float Default = 1.0f;
+
+	//速度をリセットする。
+	Velocity = FVector::ZeroVector;
+	SpeedCalcTimeEvent(CrashRate, CallTime);
+	SpeedCalcTimeEvent(Default, Default);
+}
+
+//移動計算
+void UMyCartMoveComponent::UpdateLocationFromVelocity(float DeltaTime)
+{
+	//あたり判定用の変数
+	FHitResult Hit;
+
+	//移動処理
+	FVector Translation = Velocity * 100 * DeltaTime;
+	GetOwner()->AddActorWorldOffset(Translation, true, &Hit);
+
+
+	//壁などに当たっていた時の処理
+	if (Hit.IsValidBlockingHit())
+	{
+		//速度をリセットする。
+		Velocity = FVector::ZeroVector;
+	}
+}
+
+//向き計算
 void UMyCartMoveComponent::ApplyRotation(float DeltaTime, float Steering)
 {
 	//向き計算
@@ -94,25 +138,32 @@ void UMyCartMoveComponent::ApplyRotation(float DeltaTime, float Steering)
 	GetOwner()->AddActorWorldRotation(RotationDelta);
 }
 
-//位置を移動させるメソッド
-void UMyCartMoveComponent::UpdateLocationFromVelocity(float DeltaTime)
+
+//空気抵抗力取得
+FVector UMyCartMoveComponent::GetAirResistance()
 {
-	//あたり判定用の変数
-	FHitResult Hit;
-
-	//移動処理
-	FVector Translation = Velocity * 100 * DeltaTime;
-	GetOwner()->AddActorWorldOffset(Translation, true, &Hit);
-
-
-	//壁などに当たっていた時の処理
-	if (Hit.IsValidBlockingHit())
-	{
-		//速度をリセットする。
-		Velocity = FVector::ZeroVector;
-	}
+	//空気抵抗力　= -正規化した速度のベクトル　* 速度ベクトルの２乗 * 空気抵抗係数
+	return  -Velocity.GetSafeNormal() * Velocity.SizeSquared() * DragCoefficient;
 }
 
+
+//転がり抵抗力計算
+FVector UMyCartMoveComponent::GetRollingResistance()
+{
+	
+	//重力
+	//UE_LOG(LogTemp, Warning, TEXT("Gravity: %f"), GetWorld()->GetGravityZ());
+	float accelerationDueToGravity = -GetWorld()->GetGravityZ() / 100;
+
+	float NormalForce = Mass * accelerationDueToGravity;
+	//転がり抵抗 = 正規化した速度のベクトル　* 転がり抵抗係数 * 法線ベクトル
+	return -Velocity.GetSafeNormal() * RollingResistanceCoefficient * NormalForce;
+}
+
+
+
+
+//シミュレーション移動
 void UMyCartMoveComponent::SimulateMove(const FMyPawnMove& move)
 {
 	//アクセル力
@@ -143,65 +194,31 @@ void UMyCartMoveComponent::SimulateMove(const FMyPawnMove& move)
 }
 
 
-//空気抵抗力計算メソッド
-FVector UMyCartMoveComponent::GetAirResistance()
+//移動作成
+FMyPawnMove UMyCartMoveComponent::CreateMove(float DeltaTime)
 {
-	//空気抵抗力　= -正規化した速度のベクトル　* 速度ベクトルの２乗 * 空気抵抗係数
-	return  -Velocity.GetSafeNormal() * Velocity.SizeSquared() * DragCoefficient;
-}
+	//カーブ時の減速値設定
+	if (SteeringThrow != 0.0f)
+	{
+		SteeringRate = 0.5f;
+	}
+	else
+	{
+		SteeringRate = 1.0f;
+	}
 
-//転がり抵抗力取得メソッド
-FVector UMyCartMoveComponent::GetRollingResistance()
-{
-	//転がり抵抗力計算
+	//UE_LOG(LogTemp, Error, TEXT("SteeringRate = %f"), SteeringRate);
+	FMyPawnMove Move;
+	Move.DeltaTime = DeltaTime;
+	Move.SteeringThrow = SteeringThrow;
+	Move.Throttle = (Throttle * (SpeedUpRate * RoadSpeedRate) * SteeringRate);
+	Move.Time = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
 
-	//重力
-	//UE_LOG(LogTemp, Warning, TEXT("Gravity: %f"), GetWorld()->GetGravityZ());
-	float accelerationDueToGravity = -GetWorld()->GetGravityZ() / 100;
-
-	float NormalForce = Mass * accelerationDueToGravity;
-	//転がり抵抗 = 正規化した速度のベクトル　* 転がり抵抗係数 * 法線ベクトル
-	return -Velocity.GetSafeNormal() * RollingResistanceCoefficient * NormalForce;
-}
-
-void UMyCartMoveComponent::SpeedCalc(float Rate)
-{
-
-	//スロットルに与える乗算値を変更
-	SpeedUpRate = Rate;
+	return Move;
 
 }
 
-//速度調整のタイムイベント関数
-void UMyCartMoveComponent::SpeedCalcTimeEvent(float Rate , float CallTime)
-{
-	//イベント用のハンドラーとデリゲート変数を宣言
-	FTimerHandle SpeedHandler;
-	FTimerDelegate SpeedDelegate;
 
-	//速度調整の関数を登録
-	SpeedDelegate.BindUFunction(this, FName(TEXT("SpeedCalc")), Rate);
-	
-	//UE_LOG(LogTemp, Warning, TEXT("RateInput = %f"), Rate);
-
-	//イベント登録した関数を呼ぶ
-	GetWorld()->GetTimerManager().SetTimer(SpeedHandler, SpeedDelegate, CallTime, false);
-}
-
-void UMyCartMoveComponent::SpeedUpEvent()
-{
-	//TODO:マジックNO修正
-	SpeedCalcTimeEvent(10.0f,  0.01f);
-	SpeedCalcTimeEvent(1.0f,  1.0f);
-}
-
-void UMyCartMoveComponent::CrashEvent()
-{
-	//速度をリセットする。
-	Velocity = FVector::ZeroVector;
-	SpeedCalcTimeEvent(0.0f,  0.01f);
-	SpeedCalcTimeEvent(1.0f, 1.0f);
-}
 
 void UMyCartMoveComponent::SetThrottle(float value)
 {

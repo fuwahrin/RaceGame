@@ -71,68 +71,22 @@ void AMyRaceGamePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	//アイテム出現ボタン
-	
 	PlayerInputComponent->BindAction("UseItem", IE_Pressed, this, &AMyRaceGamePawn::ItemUse);
 
 	//リスポーン
-	PlayerInputComponent->BindAction("PlayerRespawn", IE_Pressed, this, &AMyRaceGamePawn::Reapawn);
-	
-	//ゲーム終了
-	PlayerInputComponent->BindAction("EndGame", IE_Pressed, this, &AMyRaceGamePawn::GameEnd);
-
-	//タイトルに戻る
-	PlayerInputComponent->BindAction("GameQuit", IE_Pressed, this, &AMyRaceGamePawn::MoveTitle);
-}
-
-
-
-//	スピードを調整するイベント
-void AMyRaceGamePawn::SpeedCalcFunction(float SpeedMultipication)
-{
-	//正面のベクトルに引数で指定した値を乗算する
-	FVector NewVelocity = GetMesh()->GetForwardVector() * SpeedMultipication;
-	GetMesh()->SetPhysicsLinearVelocity(NewVelocity);
-
-}
-
-//	プレイヤーリスポーン（救済措置）
-void AMyRaceGamePawn::Reapawn()
-{
-	//サーバー側で呼ばれているなら処理を行う
-	if (this->HasAuthority())
-	{
-		//リスポーン位置の調整値
-		FVector VectorOffset = FVector(0.0f, 0.0f, 20.0f);
-		//リスポーン位置の設定
-		FVector RespawnLocation = GetMesh()->GetComponentLocation() + VectorOffset;
-		FTransform RespawnTransform = FTransform(RespawnLocation);
-		GetMesh()->SetWorldTransform(RespawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
-	}
-	else
-	{
-		//クライアント側ならサーバで実行するように処理する
-		RespawnRunonServer();
-	}
+	PlayerInputComponent->BindAction("PlayerRespawn", IE_Pressed, this, &AMyRaceGamePawn::Respawn);
 	
 }
 
-void AMyRaceGamePawn::RespawnRunonServer_Implementation()
+//入力値のリセット
+void AMyRaceGamePawn::InputReset()
 {
-	Reapawn();
+	InputCalc = 1.0f;
+	
+	//アイテムを使用可能状態にする。
+	ItemSettingComponent->SetItemUse(true);
 }
 
-//	タイトル画面に戻る
-void AMyRaceGamePawn::MoveTitle()
-{
-	UGameplayStatics::OpenLevel(GetWorld(), FName(TEXT("MainMenu")), true, TEXT("listen"));
-}
-
-//	ゲーム終了
-void AMyRaceGamePawn::GameEnd()
-{
-	APlayerController *MyController = UGameplayStatics::GetPlayerController(this, 0);
-	UKismetSystemLibrary::QuitGame(this ,MyController , EQuitPreference::Quit, false);
-}
 
 //　タイヤのコライダー判定（前輪）※BeginOverlap
 void AMyRaceGamePawn::ForwardCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -144,7 +98,7 @@ void AMyRaceGamePawn::ForwardCollisionBeginOverlap(UPrimitiveComponent* Overlapp
 }
 
 //　タイヤのコライダー判定(前輪）※Endlap
-void AMyRaceGamePawn::ForwardCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent,	AActor* OtherActor,	UPrimitiveComponent* OtherComp,	int32 OtherBodyIndex)
+void AMyRaceGamePawn::ForwardCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (OtherComp->ComponentHasTag("OffRoad"))
 	{
@@ -163,7 +117,7 @@ void AMyRaceGamePawn::BackwardCollisionBeginOverlap(UPrimitiveComponent* Overlap
 }
 
 //　タイヤのコライダー判定(後輪）※Endlap
-void AMyRaceGamePawn::BackwardCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent,	AActor* OtherActor,	UPrimitiveComponent* OtherComp,	int32 OtherBodyIndex)
+void AMyRaceGamePawn::BackwardCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (OtherComp->ComponentHasTag("OffRoad"))
 	{
@@ -172,15 +126,10 @@ void AMyRaceGamePawn::BackwardCollisionEndOverlap(UPrimitiveComponent* Overlappe
 
 }
 
-void AMyRaceGamePawn::ItemUse()
-{
-	ItemSettingComponent->SpawnItem();
-}
-
-
+//クラッシュイベント
 void AMyRaceGamePawn::CrashEvent()
 {
-	
+
 	const float SpeedMultipication = 0.0f;
 
 	//0を乗算することによってスピードをなくす。
@@ -195,18 +144,21 @@ void AMyRaceGamePawn::CrashEvent()
 
 	//一定時間完了後入力値に掛けている値をもとに戻す
 	float DelayTime = 1.0f;
-	GetWorld()->GetTimerManager().SetTimer(BrakeTimeHandler, this, &AMyRaceGamePawn::InputReset, DelayTime ,  false);
-	
+	GetWorld()->GetTimerManager().SetTimer(BrakeTimeHandler, this, &AMyRaceGamePawn::InputReset, DelayTime, false);
+
 
 }
 
-void AMyRaceGamePawn::InputReset()
+//	スピードを調整するイベント
+void AMyRaceGamePawn::SpeedCalcFunction(float SpeedMultipication)
 {
-	InputCalc = 1.0f;
-	ItemSettingComponent->SetItemUse(true);
+	//正面のベクトルに引数で指定した値を乗算する
+	FVector NewVelocity = GetMesh()->GetForwardVector() * SpeedMultipication;
+	GetMesh()->SetPhysicsLinearVelocity(NewVelocity);
+
 }
 
-
+//減速処理
 void AMyRaceGamePawn::AccelSetting(UPrimitiveComponent* HitComponent, bool bIsSpeedDown)
 {
 	//UE_LOG(LogTemp, Log, TEXT("AccleSettingOverlap"));
@@ -234,5 +186,38 @@ void AMyRaceGamePawn::AccelSetting(UPrimitiveComponent* HitComponent, bool bIsSp
 	InputCalc = InputCalcMax - DownSpeedOffset;
 
 }
+
+//	プレイヤーリスポーン（救済措置）
+void AMyRaceGamePawn::Respawn()
+{
+	//サーバー側で呼ばれているなら処理を行う
+	if (this->HasAuthority())
+	{
+		//リスポーン位置の調整値
+		FVector VectorOffset = FVector(0.0f, 0.0f, 20.0f);
+		//リスポーン位置の設定
+		FVector RespawnLocation = GetMesh()->GetComponentLocation() + VectorOffset;
+		FTransform RespawnTransform = FTransform(RespawnLocation);
+		GetMesh()->SetWorldTransform(RespawnTransform, false, nullptr, ETeleportType::TeleportPhysics);
+	}
+	else
+	{
+		//クライアント側ならサーバで実行するように処理する
+		RespawnRunonServer();
+	}
+	
+}
+
+void AMyRaceGamePawn::RespawnRunonServer_Implementation()
+{
+	Respawn();
+}
+
+
+void AMyRaceGamePawn::ItemUse()
+{
+	ItemSettingComponent->SpawnItem();
+}
+
 
 

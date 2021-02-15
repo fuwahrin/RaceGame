@@ -45,6 +45,8 @@ void URaceSettingComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 }
 
+
+//コンポーネントの初期設定
 void URaceSettingComponent::InitSetting()
 {
 	// ...
@@ -66,6 +68,7 @@ void URaceSettingComponent::InitSetting()
 	}
 }
 
+//コンポーネントのTick
 void URaceSettingComponent::RaceSettingTick()
 {
 
@@ -86,10 +89,6 @@ void URaceSettingComponent::RaceSettingTick()
 		}
 	}
 }
-
-
-
-
 
 //	ゴール判定を行うメソッド
 void URaceSettingComponent::GoalCheck()
@@ -126,7 +125,8 @@ void URaceSettingComponent::GoalCheck()
 	
 }
 
-//	チェックポイント通過時に呼ばれるメソッド
+
+//チェックポイント到達判定処理
 void URaceSettingComponent::CheckPointRun()
 {
 	//通過したチェックポイントを数える

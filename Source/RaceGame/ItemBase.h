@@ -17,18 +17,9 @@ UCLASS()
 class RACEGAME_API AItemBase : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	AItemBase();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	
 protected:
 	//------------------コンポーネント
-	
+
 	//あたり判定のコリジョン
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = DisPlay, meta = (AllowPrivateAccess = "true"))
 		class USphereComponent  *ItemColision;
@@ -38,6 +29,40 @@ protected:
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = DisPlay, meta = (AllowPrivateAccess = "true"))
 		class URotatingMovementComponent *RotationMovement;
+
+
+
+protected:
+	//------------------変数
+
+	//アイテムのリスポーンが可能かどうか
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "ItemSetting", meta = (AllowPrivateAccess = "true"))
+		bool bIsItemRespawn;
+
+	//付与するアイテムの番号
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "ItemSetting", meta = (AllowPrivateAccess = "true"))
+		int32 SelectItemNumber;
+
+	//アイテム再出現のタイムハンドラ
+	FTimerHandle RespawnHandler;
+
+public:
+	//----イベントディスパッチャー呼び出し用（呼び出し元：MyRaceGamePawn ItemPickup）
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
+		FItemPickupDispather ItemPickupDispather;
+
+
+
+	
+public:	
+	// Sets default values for this actor's properties
+	AItemBase();
+
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+	
 
 protected:
 	//------------------メソッド
@@ -62,27 +87,6 @@ protected:
 	virtual void ItemHit(AMyRaceGamePawn *HitPawn);
 	virtual void ItemHit(AMyPawn* HitPawn);
 
-	
-
-protected:
-	//------------------変数
-	
-
-	//アイテムのリスポーンが可能かどうか
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "ItemSetting", meta = (AllowPrivateAccess = "true"))
-		bool bIsItemRespawn;
-
-	//付与するアイテムの番号
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "ItemSetting", meta = (AllowPrivateAccess = "true"))
-		int32 SelectItemNumber;
-
-	//アイテム再出現のタイムハンドラ
-	FTimerHandle RespawnHandler;
-
-public:
-	//----イベントディスパッチャー呼び出し用（呼び出し元：MyRaceGamePawn ItemPickup）
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Item", meta = (AllowPrivateAccess = "true"))
-	FItemPickupDispather ItemPickupDispather;
 
 
 };

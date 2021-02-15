@@ -19,7 +19,7 @@ AItemSlip::AItemSlip()
 	ItemMesh->SetRelativeLocation(FVector(0.0f, 0.0, 25.0f));
 	
 
-	//“¯Šúİ’è
+	//“¯ŠúON
 	SetReplicates(true);
 
 	//ƒŠƒXƒ|[ƒ“–h~

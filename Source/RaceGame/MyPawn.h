@@ -66,56 +66,9 @@ public:
 	UPROPERTY(Category = Display, EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class URaceSettingComponent* RaceSettingComponent;
 
-
-
-
-
-
-
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	void MoveForward(float value);
-
-	void MoveRight(float value);
-
-	//権限
-	ENetRole Role;
-
-	//権限の確認メソッド
-	FString GetEnumText(ENetRole Role);
-
-	UFUNCTION()
-	void ItemUse();
-	//道路判定
-	UFUNCTION()
-	float RoadSpeedCalcFunction(class ARayActor *rayActor);
-
-	UFUNCTION()
-	ARayActor* SpawnRayActor(USceneComponent *parent);
-
-	//レイトレース用のBP参照用
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ARayActor>RayActorClass;
-
-	//ゴールに必要なラップ数
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		int32 GoalLap;
-
-	//現在何ラップ走ったかカウントする変数
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Race")
-		int32 LapCounter;
-
-	//UIの実数を格納する変数
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
-		class UUserWidget *GameUi;
-
 	//AudioComponent
 	UPROPERTY(Category = Display, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	UAudioComponent* EngineSoundComponent;
-
+		UAudioComponent* EngineSoundComponent;
 
 	//変数参照用
 	ARayActor* RayForward;
@@ -123,15 +76,49 @@ protected:
 	ARayActor* RayLeft;
 	ARayActor* RayRight;
 
-	
-public:	
+
+	//権限
+	ENetRole Role;
+
+
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+protected:
+
+	//前進・後退
+	void MoveForward(float value);
+
+	//左右
+	void MoveRight(float value);
+
+	//アイテムを仕様完了状態にするメソッド
+	UFUNCTION()
+		void ItemUse();
 	
+	//道路の速度値を取得するメソッド
+	UFUNCTION()
+		float RoadSpeedCalcFunction(class ARayActor *rayActor);
+
+	//レイトレースのアクターを出現させる。
+	UFUNCTION()
+		ARayActor* SpawnRayActor(USceneComponent *parent);
+
+	//レイトレース用のBP参照用
+	UPROPERTY(EditAnywhere)
+		TSubclassOf<class ARayActor>RayActorClass;
+
+	//権限の確認メソッド
+	FString GetEnumText(ENetRole Role);
 
 
 };

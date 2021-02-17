@@ -98,12 +98,12 @@ void UMyCartMoveComponentReplicator::OnRep_ServerState()
 	switch (GetOwnerRole())
 	{
 	case ROLE_AutonomousProxy:
-		//サーバー側
+		//クライアント側で操作しているPawn自身
 		AutonomousProxy_OnRep_ServerState();
 		break;
 
 	case ROLE_SimulatedProxy:
-		//クライアント側
+		//クライアント側で複製されているPawn
 		SimulatedProxy_OnRep_ServerState();
 		break;
 
@@ -147,7 +147,7 @@ void UMyCartMoveComponentReplicator::CliantTick(float DeltaTime)
 	InterpolateRotation(LerpAlpha);
 }
 
-//権限がサーバ側だったときの同期処理
+//権限がクライアント側で操作しているPawn自身
 void UMyCartMoveComponentReplicator::AutonomousProxy_OnRep_ServerState()
 {
 	//UE_LOG(LogTemp, Warning, TEXT("ReplicatedLocation"));
@@ -168,7 +168,7 @@ void UMyCartMoveComponentReplicator::AutonomousProxy_OnRep_ServerState()
 }
 
 
-//権限がクライアント側だったときの同期処理
+//権限がクライアント側で複製されているPawnの時
 void UMyCartMoveComponentReplicator::SimulatedProxy_OnRep_ServerState()
 {
 	if (MovementComponent == nullptr) return;

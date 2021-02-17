@@ -65,6 +65,5 @@ void AItemBullet::ItemHit(AMyRaceGamePawn *HitPawn)
 void AItemBullet::ItemHit(AMyPawn* HitPawn)
 {
 	//プレイヤーをクラッシュさせる
-	//HitPawn->CrashEvent();
 	HitPawn->FindComponentByClass<UMyCartMoveComponent>()->CrashEvent();
 }

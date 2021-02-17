@@ -32,10 +32,10 @@ protected:
 	void RayTrace(bool bIsDebugDraw);
 
 public:
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable , BlueprintPure)
 		FName GetRayHitState() { return CurrentState; }
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable , BlueprintPure)
 		bool IsStateChange() { return CurrentState != FName("None"); }
 
 

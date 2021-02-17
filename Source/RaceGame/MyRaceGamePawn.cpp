@@ -93,6 +93,7 @@ void AMyRaceGamePawn::ForwardCollisionBeginOverlap(UPrimitiveComponent* Overlapp
 {
 	if (OtherComp->ComponentHasTag("OffRoad"))
 	{
+		//Œ¸‘¬‚³‚¹‚é
 		AccelSetting(OtherComp, true);
 	}
 }
@@ -102,6 +103,7 @@ void AMyRaceGamePawn::ForwardCollisionEndOverlap(UPrimitiveComponent* Overlapped
 {
 	if (OtherComp->ComponentHasTag("OffRoad"))
 	{
+		//Œ¸‘¬‰ğœ
 		AccelSetting(OtherComp, false);
 	}
 
@@ -112,6 +114,7 @@ void AMyRaceGamePawn::BackwardCollisionBeginOverlap(UPrimitiveComponent* Overlap
 {
 	if (OtherComp->ComponentHasTag("OffRoad"))
 	{
+		//Œ¸‘¬‚³‚¹‚é
 		AccelSetting(OtherComp, true);
 	}
 }
@@ -121,6 +124,7 @@ void AMyRaceGamePawn::BackwardCollisionEndOverlap(UPrimitiveComponent* Overlappe
 {
 	if (OtherComp->ComponentHasTag("OffRoad"))
 	{
+		//Œ¸‘¬‰ğœ
 		AccelSetting(OtherComp, false);
 	}
 

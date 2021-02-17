@@ -172,7 +172,7 @@ void UMyCartMoveComponent::SimulateMove(const FMyPawnMove& move)
 	
 	//空気抵抗
 	Force += GetAirResistance();
-	//摩擦力
+	//転がり抵抗
 	Force += GetRollingResistance();
 
 
@@ -219,7 +219,7 @@ FMyPawnMove UMyCartMoveComponent::CreateMove(float DeltaTime)
 }
 
 
-
+//スロットル値のセット＆同期タイミングのセット
 void UMyCartMoveComponent::SetThrottle(float value)
 {
 	

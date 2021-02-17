@@ -95,6 +95,7 @@ void AMyPawn::BeginPlay()
 	//権限の取得
 	Role = GetLocalRole();
 
+	//同期を行う秒数の設定（１秒）
 	if (HasAuthority())
 	{
 		NetUpdateFrequency = 1.0f;
@@ -114,7 +115,7 @@ void AMyPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	//プレイヤーの権限をデバッグ表示
-	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
+	//DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
 
 	//レイトレース
 	float forwardState =  RoadSpeedCalcFunction(RayForward);
